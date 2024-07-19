@@ -20,7 +20,14 @@ namespace DLGMod
 
         void Awake()
         {
+            log = BepInEx.Logging.Logger.CreateLogSource(GUID);
 
+            MissionControlQuotesSFX = new List<AudioClip>();
+
+            string filesPath = this.Info.Location;
+            filesPath = filesPath.TrimEnd("DeepLethalGalactic.dll".ToCharArray());
+
+            //AssetBundle assetBundle = AssetBundle.LoadFromFile(>> Path here <<);
         }
     }
 }
