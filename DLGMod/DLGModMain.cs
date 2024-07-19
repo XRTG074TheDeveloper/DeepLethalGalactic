@@ -27,7 +27,7 @@ namespace DLGMod
             string filesPath = this.Info.Location;
             filesPath = filesPath.TrimEnd("DeepLethalGalactic.dll".ToCharArray());
 
-            //AssetBundle assetBundle = AssetBundle.LoadFromFile(>> Path here <<);
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "SoundBundles\\MissionControlQuotes\\" + "mission_control_quotes");
         }
     }
 }
