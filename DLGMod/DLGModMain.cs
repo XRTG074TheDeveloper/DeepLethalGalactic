@@ -3,6 +3,7 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DLGMod
 {
@@ -25,9 +26,16 @@ namespace DLGMod
             MissionControlQuotesSFX = new List<AudioClip>();
 
             string filesPath = this.Info.Location;
-            filesPath = filesPath.TrimEnd("DeepLethalGalactic.dll".ToCharArray());
+            filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
 
             AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "SoundBundles\\MissionControlQuotes\\" + "mission_control_quotes");
+
+            if (assetBundle != null)
+            {
+                MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
+            }
+
+            harmonyInstance.PatchAll();
         }
     }
 }
