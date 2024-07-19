@@ -64,6 +64,8 @@
   <ItemGroup>
     <Compile Include="DLGModMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StartPatches\StartPatches.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

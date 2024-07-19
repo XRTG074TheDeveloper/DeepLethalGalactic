@@ -5,6 +5,8 @@ using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
 
+using DLGMod.StartPatches;
+
 namespace DLGMod
 {
     [BepInPlugin(GUID, "Deep Lethal Company", "0.0.0.1")]
@@ -35,7 +37,7 @@ namespace DLGMod
                 MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
             }
 
-            harmonyInstance.PatchAll();
+            harmonyInstance.PatchAll(typeof(StarterSoundPatch));
         }
     }
 }
