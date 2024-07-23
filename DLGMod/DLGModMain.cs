@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using DLGMod.StartPatches;
+using System.Runtime.CompilerServices;
 
 namespace DLGMod
 {
@@ -16,18 +17,22 @@ namespace DLGMod
 
         internal readonly Harmony harmonyInstance = new Harmony(GUID);
 
-        internal ManualLogSource log;
+        internal static ManualLogSource logger;
+
+        internal static string filesPath;
 
 
         internal static List<AudioClip> MissionControlQuotesSFX;
 
+        internal static int playersAmount;
+
         void Awake()
         {
-            log = BepInEx.Logging.Logger.CreateLogSource(GUID);
+            logger = BepInEx.Logging.Logger.CreateLogSource(GUID);
 
             MissionControlQuotesSFX = new List<AudioClip>();
 
-            string filesPath = this.Info.Location;
+            filesPath = this.Info.Location;
             filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
 
             AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "SoundBundles\\MissionControlQuotes\\" + "mission_control_quotes");
@@ -37,7 +42,15 @@ namespace DLGMod
                 MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
             }
 
-            harmonyInstance.PatchAll(typeof(StarterSoundPatch));
+            harmonyInstance.PatchAll(typeof(WelcomeSpeechPatch));
+            harmonyInstance.PatchAll(typeof(AmmunitionPatch));
+        }
+
+        internal static void SendAmmunition(int _playersAmount)
+        {
+            playersAmount = _playersAmount;
+
+            AmmunitionPatch.shouldBeSent = true;
         }
     }
 }
