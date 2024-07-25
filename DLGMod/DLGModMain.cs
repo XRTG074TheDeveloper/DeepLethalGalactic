@@ -1,12 +1,10 @@
-﻿using UnityEngine;
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Logging;
+using DLGMod.StartPatches;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
-
-using DLGMod.StartPatches;
-using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace DLGMod
 {
@@ -44,6 +42,7 @@ namespace DLGMod
 
             harmonyInstance.PatchAll(typeof(WelcomeSpeechPatch));
             harmonyInstance.PatchAll(typeof(AmmunitionPatch));
+            harmonyInstance.PatchAll(typeof(ChatCommandsPatch));
         }
 
         internal static void SendAmmunition(int _playersAmount)
@@ -51,6 +50,15 @@ namespace DLGMod
             playersAmount = _playersAmount;
 
             AmmunitionPatch.shouldBeSent = true;
+        }
+
+        internal static void SendResupply(int _playersAmount)
+        {
+            playersAmount = _playersAmount;
+
+            AmmunitionPatch.shouldBeSent = true;
+
+            AmmunitionPatch.resupplyOrdered = true;
         }
     }
 }
