@@ -7,7 +7,7 @@ namespace DLGMod.StartPatches
     [HarmonyPatch(typeof(StartOfRound))]
     internal class WelcomeSpeechPatch
     {
-        [HarmonyPatch("Update")]
+        [HarmonyPatch("Start")]
         [HarmonyPostfix]
         public static void SetUpStarterSound(StartOfRound __instance)
         {
@@ -23,6 +23,7 @@ namespace DLGMod.StartPatches
                 DLGModMain.SendAmmunition(__instance.connectedPlayersAmount + 1);
             }
         }
+
     }
 
     [HarmonyPatch(typeof(Terminal))]
