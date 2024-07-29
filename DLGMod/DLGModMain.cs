@@ -22,6 +22,8 @@ namespace DLGMod
 
         internal static List<AudioClip> MissionControlQuotesSFX;
 
+        internal static List<AudioClip> swarmSFX;
+
         internal static int playersAmount;
 
         void Awake()
@@ -40,9 +42,17 @@ namespace DLGMod
                 MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
             }
 
+            assetBundle = AssetBundle.LoadFromFile(filesPath + "SoundBundles\\Swarms\\" + "swarm");
+
+            if (assetBundle != null)
+            {
+                swarmSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
+            }
+
             harmonyInstance.PatchAll(typeof(WelcomeSpeechPatch));
             harmonyInstance.PatchAll(typeof(AmmunitionPatch));
             harmonyInstance.PatchAll(typeof(ChatCommandsPatch));
+            harmonyInstance.PatchAll(typeof(SwarmPatch));
         }
 
         internal static void SendAmmunition(int _playersAmount)
