@@ -1,5 +1,7 @@
-﻿using HarmonyLib;
+﻿using GameNetcodeStuff;
+using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using UnityEngine;
 
@@ -10,7 +12,7 @@ namespace DLGMod.StartPatches
     {
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        public static void SetUpStarterSound(StartOfRound __instance)
+        public static void StarterSetUp(StartOfRound __instance)
         {
             __instance.shipIntroSpeechSFX = DLGModMain.MissionControlQuotesSFX[2];
         }
@@ -98,7 +100,7 @@ namespace DLGMod.StartPatches
         [HarmonyPostfix]
         public static void GetMessage(ref string chatMessage, ref int playerId, HUDManager __instance)
         {
-            if (chatMessage.Contains("SWARM"))
+            if (playerId == -1)
             {
                 TimeOfDay timeOfDay = GameObject.FindObjectOfType<TimeOfDay>();
 
@@ -110,23 +112,20 @@ namespace DLGMod.StartPatches
                         timeOfDay.TimeOfDayMusic.volume = 1f;
                         timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.MissionControlQuotesSFX[1], 1f);
                         timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[1], 1f);
-                        DLGModMain.logger.LogInfo("SWARM!");
                         return;
-                    case "SWARM MUSIC":
+                    case "THEY ARE HERE!!!":
                         timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[0], 1f);
                         timeOfDay.TimeOfDayMusic.loop = true;
-                        DLGModMain.logger.LogInfo("SWARM MUSIC");
                         return;
                     case "SWARM IS ALMOST OVER":
                         timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.MissionControlQuotesSFX[0], 1f);
                         timeOfDay.TimeOfDayMusic.loop = false;
-                        DLGModMain.logger.LogInfo("SWARM IS ALMOST OVER!");
                         return;
                 }
             }
 
             if (!__instance.IsHost) return;
-            if (playerId == -1) return;
+            if (playerId == -1 || playerId == 52) return;
 
             if (chatMessage == "/resupply" && !isConfirmation)
             {
@@ -144,7 +143,6 @@ namespace DLGMod.StartPatches
                 isConfirmation = false;
                 __instance.AddTextToChatOnServer($"Order is cancelled by {__instance.playersManager.allPlayerScripts[playerId].playerUsername}");
             }
-            
         }
     }
 
@@ -176,7 +174,7 @@ namespace DLGMod.StartPatches
 
             if (rollDice <= chance && enemiesAmount < 3)
             {
-                for (int i = 0; i < (DLGModMain.playersAmount) * 8; i++)
+                for (int i = 0; i < (DLGModMain.playersAmount) * 9; i++)
                 {
                     int enemyToSpawn = UnityEngine.Random.Range(1, 3) == 1 ? 1 : 4;
                     EnemyVent vent = roundManager.allEnemyVents[UnityEngine.Random.Range(1, roundManager.allEnemyVents.Length)];
@@ -186,7 +184,7 @@ namespace DLGMod.StartPatches
 
                 isSwarm = true;
 
-                hudManager.AddTextToChatOnServer("SWARM!", 1);
+                hudManager.AddTextToChatOnServer("SWARM!", 0);
 
                 chance = 0f;
             }
@@ -198,11 +196,11 @@ namespace DLGMod.StartPatches
             {
                 if (isSwarm)
                 {
-                    hudManager.AddTextToChatOnServer("SWARM IS ALMOST OVER", 1);
+                    hudManager.AddTextToChatOnServer("SWARM IS ALMOST OVER", 0);
                     isSwarm = false;
                 }
 
-                chance += 2f;
+                chance += 10f;
             }
         }
 
@@ -212,7 +210,7 @@ namespace DLGMod.StartPatches
         {
             if (isSwarm && !__instance.TimeOfDayMusic.isPlaying)
             {
-                hudManager.AddTextToChatOnServer("SWARM MUSIC", 1);
+                hudManager.AddTextToChatOnServer("THEY ARE HERE!!!", 0);
             }
             else if (!isSwarm && __instance.TimeOfDayMusic.isPlaying)
             {
