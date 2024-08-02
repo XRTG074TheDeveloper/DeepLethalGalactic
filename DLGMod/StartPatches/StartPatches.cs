@@ -3,6 +3,7 @@ using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace DLGMod.StartPatches
@@ -100,32 +101,8 @@ namespace DLGMod.StartPatches
         [HarmonyPostfix]
         public static void GetMessage(ref string chatMessage, ref int playerId, HUDManager __instance)
         {
-            if (playerId == -1)
-            {
-                TimeOfDay timeOfDay = GameObject.FindObjectOfType<TimeOfDay>();
-
-                DLGModMain.logger.LogInfo("SWARM?");
-
-                switch (chatMessage)
-                {
-                    case "SWARM!":
-                        timeOfDay.TimeOfDayMusic.volume = 1f;
-                        timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.MissionControlQuotesSFX[1], 1f);
-                        timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[1], 1f);
-                        return;
-                    case "THEY ARE HERE!!!":
-                        timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[0], 1f);
-                        timeOfDay.TimeOfDayMusic.loop = true;
-                        return;
-                    case "SWARM IS ALMOST OVER":
-                        timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.MissionControlQuotesSFX[0], 1f);
-                        timeOfDay.TimeOfDayMusic.loop = false;
-                        return;
-                }
-            }
-
             if (!__instance.IsHost) return;
-            if (playerId == -1 || playerId == 52) return;
+            if (playerId == -1) return;
 
             if (chatMessage == "/resupply" && !isConfirmation)
             {
@@ -144,6 +121,36 @@ namespace DLGMod.StartPatches
                 __instance.AddTextToChatOnServer($"Order is cancelled by {__instance.playersManager.allPlayerScripts[playerId].playerUsername}");
             }
         }
+
+        [HarmonyPatch("AddTextMessageClientRpc")]
+        [HarmonyPrefix]
+        public static void GetSwarmMessage(ref string chatMessage)
+        {
+            DLGModMain.logger.LogInfo(chatMessage);
+
+            TimeOfDay timeOfDay = GameObject.FindObjectOfType<TimeOfDay>();
+
+            switch (chatMessage)
+            {
+                case "SWARM!":
+                    timeOfDay.TimeOfDayMusic.volume = 1f;
+                    timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.MissionControlQuotesSFX[1], 1f);
+                    timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[1], 1f);
+                    return;
+                case "THEY ARE HERE!!!":
+                    timeOfDay.TimeOfDayMusic.clip = DLGModMain.swarmSFX[0];
+                    timeOfDay.TimeOfDayMusic.Play();
+                    timeOfDay.TimeOfDayMusic.loop = true;
+                    SwarmPatch.isSwarmSFXLooped = true;
+                    return;
+                case "SWARM IS ALMOST OVER":
+                    timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.MissionControlQuotesSFX[0], 1f);
+                    timeOfDay.TimeOfDayMusic.loop = false;
+                    SwarmPatch.isSwarmSFXLooped = false;
+                    SwarmPatch.isSwarmSFXFading = true;
+                    return;
+            }
+        }
     }
 
     [HarmonyPatch(typeof(TimeOfDay))]
@@ -152,6 +159,8 @@ namespace DLGMod.StartPatches
         internal static float chance = 0;
 
         internal static bool isSwarm = false;
+        internal static bool isSwarmSFXLooped = false;
+        internal static bool isSwarmSFXFading = false;
 
         internal static HUDManager hudManager = GameObject.FindObjectOfType<HUDManager>();
 
@@ -167,6 +176,8 @@ namespace DLGMod.StartPatches
 
             int enemiesAmount = 0;
 
+            DLGModMain.logger.LogInfo(__instance.TimeOfDayMusic.loop);
+
             foreach (EnemyAI enemy in GameObject.FindObjectsOfType<EnemyAI>())
             {
                 if (!enemy.isEnemyDead && (enemy.enemyType.enemyName == "Crawler" || enemy.enemyType.enemyName == "Bunker Spider")) enemiesAmount++;
@@ -176,7 +187,7 @@ namespace DLGMod.StartPatches
             {
                 for (int i = 0; i < (DLGModMain.playersAmount) * 9; i++)
                 {
-                    int enemyToSpawn = UnityEngine.Random.Range(1, 3) == 1 ? 1 : 4;
+                    int enemyToSpawn = UnityEngine.Random.Range(1, 4) == 1 ? 1 : 4;
                     EnemyVent vent = roundManager.allEnemyVents[UnityEngine.Random.Range(1, roundManager.allEnemyVents.Length)];
 
                     roundManager.SpawnEnemyOnServer(vent.transform.position, vent.transform.eulerAngles.y, enemyToSpawn);
@@ -184,7 +195,7 @@ namespace DLGMod.StartPatches
 
                 isSwarm = true;
 
-                hudManager.AddTextToChatOnServer("SWARM!", 0);
+                hudManager.AddTextToChatOnServer("SWARM!");
 
                 chance = 0f;
             }
@@ -196,7 +207,7 @@ namespace DLGMod.StartPatches
             {
                 if (isSwarm)
                 {
-                    hudManager.AddTextToChatOnServer("SWARM IS ALMOST OVER", 0);
+                    hudManager.AddTextToChatOnServer("SWARM IS ALMOST OVER");
                     isSwarm = false;
                 }
 
@@ -208,19 +219,23 @@ namespace DLGMod.StartPatches
         [HarmonyPostfix]
         public static void ChangeSwarmSFX(TimeOfDay __instance)
         {
-            if (isSwarm && !__instance.TimeOfDayMusic.isPlaying)
+            if (isSwarm && !__instance.TimeOfDayMusic.isPlaying && !isSwarmSFXLooped)
             {
-                hudManager.AddTextToChatOnServer("THEY ARE HERE!!!", 0);
+                hudManager.AddTextToChatOnServer("THEY ARE HERE!!!");
             }
-            else if (!isSwarm && __instance.TimeOfDayMusic.isPlaying)
+            if (!isSwarm && __instance.TimeOfDayMusic.isPlaying)
             {
-                if (__instance.TimeOfDayMusic.volume > 0)
+                if (isSwarmSFXFading)
                 {
-                    __instance.TimeOfDayMusic.volume -= 0.08f * Time.deltaTime;
-                }
-                else
-                {
-                    __instance.TimeOfDayMusic.Stop();
+                    if (__instance.TimeOfDayMusic.volume > 0)
+                    {
+                        __instance.TimeOfDayMusic.volume -= 0.08f * Time.deltaTime;
+                    }
+                    else
+                    {
+                        __instance.TimeOfDayMusic.Stop();
+                        SwarmPatch.isSwarmSFXFading = false;
+                    }
                 }
             }
         }
