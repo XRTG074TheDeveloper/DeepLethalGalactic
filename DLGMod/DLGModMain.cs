@@ -35,14 +35,14 @@ namespace DLGMod
             filesPath = this.Info.Location;
             filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
 
-            AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "SoundBundles\\MissionControlQuotes\\" + "mission_control_quotes");
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\mission_control_quotes");
 
             if (assetBundle != null)
             {
                 MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
             }
 
-            assetBundle = AssetBundle.LoadFromFile(filesPath + "SoundBundles\\Swarms\\" + "swarm");
+            assetBundle = AssetBundle.LoadFromFile(filesPath + "\\swarm");
 
             if (assetBundle != null)
             {
