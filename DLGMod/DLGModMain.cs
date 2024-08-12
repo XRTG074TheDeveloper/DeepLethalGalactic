@@ -1,6 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
-using DLGMod.StartPatches;
+using DLGMod.Patches;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DLGMod
 {
-    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.0.0.1")]
+    [BepInPlugin(GUID, "Deep Lethal Galactic", "1.4.0")]
     public class DLGModMain : BaseUnityPlugin
     {
         internal const string GUID = "XRTG074TheDeveloper.DeepLethalGalactic";
@@ -30,29 +30,32 @@ namespace DLGMod
         {
             logger = BepInEx.Logging.Logger.CreateLogSource(GUID);
 
-            MissionControlQuotesSFX = new List<AudioClip>();
+            //MissionControlQuotesSFX = new List<AudioClip>();
 
-            filesPath = this.Info.Location;
-            filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
+            //filesPath = this.Info.Location;
+            //filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
 
-            AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\mission_control_quotes");
+            //AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\mission_control_quotes");
 
-            if (assetBundle != null)
-            {
-                MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
-            }
+            //if (assetBundle != null)
+            //{
+            //    MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
+            //}
 
-            assetBundle = AssetBundle.LoadFromFile(filesPath + "\\swarm");
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\swarm");
 
             if (assetBundle != null)
             {
                 swarmSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
             }
 
-            harmonyInstance.PatchAll(typeof(WelcomeSpeechPatch));
+            harmonyInstance.PatchAll(typeof(GameControllerPatch));
             harmonyInstance.PatchAll(typeof(AmmunitionPatch));
             harmonyInstance.PatchAll(typeof(ChatCommandsPatch));
             harmonyInstance.PatchAll(typeof(SwarmPatch));
+            harmonyInstance.PatchAll(typeof(DLGTipsPatch));
+            harmonyInstance.PatchAll(typeof(SpawnAmmunitionPatch));
+            harmonyInstance.PatchAll(typeof(PlayerControllerPatch));
         }
 
         internal static void SendAmmunition(int _playersAmount)
@@ -60,15 +63,6 @@ namespace DLGMod
             playersAmount = _playersAmount;
 
             AmmunitionPatch.shouldBeSent = true;
-        }
-
-        internal static void SendResupply(int _playersAmount)
-        {
-            playersAmount = _playersAmount;
-
-            AmmunitionPatch.shouldBeSent = true;
-
-            AmmunitionPatch.resupplyOrdered = true;
         }
     }
 }
