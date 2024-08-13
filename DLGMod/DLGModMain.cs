@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DLGMod
 {
-    [BepInPlugin(GUID, "Deep Lethal Galactic", "1.4.0")]
+    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.3.1")]
     public class DLGModMain : BaseUnityPlugin
     {
         internal const string GUID = "XRTG074TheDeveloper.DeepLethalGalactic";
@@ -32,8 +32,8 @@ namespace DLGMod
 
             //MissionControlQuotesSFX = new List<AudioClip>();
 
-            //filesPath = this.Info.Location;
-            //filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
+            filesPath = this.Info.Location;
+            filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
 
             //AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\mission_control_quotes");
 
