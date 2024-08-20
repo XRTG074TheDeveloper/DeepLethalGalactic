@@ -2,6 +2,7 @@
 using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -14,8 +15,6 @@ namespace DLGMod.Patches
         [HarmonyPostfix]
         public static void StarterSetUp(StartOfRound __instance)
         {
-            __instance.shipIntroSpeechSFX = DLGModMain.MissionControlQuotesSFX[2];
-
             SwarmPatch.isSwarm = false;
             SwarmPatch.isSwarmSFXFading = false;
             SwarmPatch.chance = 0;
@@ -23,13 +22,36 @@ namespace DLGMod.Patches
 
             GameObject.FindObjectOfType<TimeOfDay>().TimeOfDayMusic.Stop();
 
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[42].result.displayText =
-            "You are not able to order ammunition pack unless you are on the mission!\n\n";
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[42].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.specialNodes[13].displayText =
+                ">MOONS\r\n" +
+                "To see the list of moons the autopilot can route to.\r\n\r\n" +
+                ">DLGMISSION\r\n" +
+                "To open DLG Mission Controller Hub, where you can changed properties of your mission.\r\n\r\n" +
+                ">STORE\r\n" +
+                "To see the company store's selection of useful items.\r\n\r\n" +
+                ">BESTIARY\r\n" +
+                "To see the list of wildlife on record.\r\n\r\n" +
+                ">STORAGE\r\n" +
+                "To access objects placed into storage.\r\n\r\n" +
+                ">OTHER\r\n" +
+                "To see the list of other commands\r\n\r\n" +
+                "[numberOfItemsOnRoute]\r\n";
 
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[43].result.displayText =
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.displayText =
+            "You are not able to order ammunition pack unless you are on the mission!\n\n";
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.overrideOptions = false;
+
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.displayText =
             "You are not able to order supply drop unless you are on the mission!\n\n";
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[43].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.overrideOptions = false;
 
             SwarmPatch.swarmEnemiesIndex.Clear();
 
@@ -44,17 +66,25 @@ namespace DLGMod.Patches
             {
                 DLGModMain.SendAmmunition(__instance.connectedPlayersAmount + 1);
 
-                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[42].result.displayText =
+                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.displayText =
                 "You have requested to order ammunition pack. Amount: [variableAmount].\n" +
                 "Total cost of items: [totalCost].\n\n" +
                 "Please CONFIRM or DENY\n";
-                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[42].result.terminalOptions = AmmunitionPatch.ammunitionPackTO;
+                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.terminalOptions = AmmunitionPatch.ammunitionPackTO;
+                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.overrideOptions = true;
 
-                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[43].result.displayText =
+                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.displayText =
                 "You have requested to order resupply drop. Amount: [variableAmount].\n" +
                 "Total cost of items: [totalCost].\n\n" +
                 "Please CONFIRM or DENY\n";
-                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[43].result.terminalOptions = AmmunitionPatch.supplyDropTO;
+                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.terminalOptions = AmmunitionPatch.supplyDropTO;
+                GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.overrideOptions = true;
 
                 SwarmPatch.dangerLevel = 5f;
 
@@ -66,17 +96,10 @@ namespace DLGMod.Patches
                             SwarmPatch.dangerLevel += 10f;
                             break;
                         case 'S':
-                            SwarmPatch.dangerLevel += 30f;
+                            SwarmPatch.dangerLevel += 20f;
                             break;
                         case '+':
-                            if (SwarmPatch.dangerLevel == 15f)
-                            {
-                                SwarmPatch.dangerLevel += 10f;
-                            }
-                            else
-                            {
-                                SwarmPatch.dangerLevel += 20f;
-                            }
+                            SwarmPatch.dangerLevel += 10f;
                             break;
                     }
                 }
@@ -87,13 +110,21 @@ namespace DLGMod.Patches
         [HarmonyPostfix]
         public static void OnShipStartLeaving()
         {
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[42].result.displayText =
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.displayText =
             "You are not able to order ammunition pack unless you are on the mission!\n\n";
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[42].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.overrideOptions = false;
 
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[43].result.displayText =
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.displayText =
             "You are not able to order supply drop unless you are on the mission!\n\n";
-            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0].compatibleNouns[43].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.terminalOptions = null;
+            GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
+                    .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.overrideOptions = false;
 
             SwarmPatch.isSwarm = false;
             SwarmPatch.isSwarmSFXFading = true;
@@ -115,6 +146,12 @@ namespace DLGMod.Patches
         internal static CompatibleNoun[] ammunitionPackTO;
         internal static CompatibleNoun[] supplyDropTO;
 
+        internal static int ammunitionNodeIndex;
+        internal static int ammunitionCompatibleNodeIndex;
+        internal static int ammunitionItemIndex;
+
+        internal static bool hasStarted = false;
+
         [HarmonyPatch("Start")]
         [HarmonyPrefix]
         public static void SetUpAmmunition(Terminal __instance)
@@ -123,84 +160,113 @@ namespace DLGMod.Patches
 
             List<Item> tempBuyableItems = __instance.buyableItemsList.ToList();
 
+            ammunitionItemIndex = tempBuyableItems.Count;
+
             tempBuyableItems.Add(new Item() { itemName = "Ammunition Pack", creditsWorth = 100 }); // Ammunition pack
             tempBuyableItems.Add(new Item() { itemName = "Supply Drop", creditsWorth = 20 }); // Resupply drop
 
             __instance.buyableItemsList = tempBuyableItems.ToArray();
 
-            List<TerminalKeyword> tempTerminalNodes = __instance.terminalNodes.allKeywords.ToList();
+            List<int> tempItemSalesPercentages = __instance.itemSalesPercentages.ToList();
 
-            tempTerminalNodes.Add(new TerminalKeyword() { word = "ammunition pack", defaultVerb = tempTerminalNodes[0], name = "Ammunition Pack" });
-            tempTerminalNodes.Add(new TerminalKeyword() { word = "supply drop", defaultVerb = tempTerminalNodes[0], name = "Supply Drop" });
+            tempItemSalesPercentages.Add(100);
+            tempItemSalesPercentages.Add(100);
 
-            __instance.terminalNodes.allKeywords = tempTerminalNodes.ToArray();
+            __instance.itemSalesPercentages = tempItemSalesPercentages.ToArray();
 
-            List<CompatibleNoun> tempCompatibleNouns = tempTerminalNodes[0].compatibleNouns.ToList();
-
-            TerminalNode ammuntionPackNode = new TerminalNode()
+            if (!hasStarted)
             {
-                buyItemIndex = 14,
-                isConfirmationNode = false,
-                clearPreviousText = true,
-                terminalEvent = "",
-                displayText = "Yay",
-                name = "buyAmmunitionPack2"
-            };
-            TerminalNode supplyDropNode = new TerminalNode()
-            {
-                buyItemIndex = 15,
-                isConfirmationNode = false,
-                clearPreviousText = true,
-                terminalEvent = "",
-                displayText = "Yay",
-                name = "buyResupplyDrop2"
-            };
 
-            ammunitionPackTO = new CompatibleNoun[]
-            {
+                List<TerminalKeyword> tempTerminalNodes = __instance.terminalNodes.allKeywords.ToList();
+
+                ammunitionNodeIndex = tempTerminalNodes.Count;
+
+                tempTerminalNodes.Add(new TerminalKeyword() { word = "ammunition pack", defaultVerb = tempTerminalNodes[0], name = "Ammunition Pack" });
+                tempTerminalNodes.Add(new TerminalKeyword() { word = "supply drop", defaultVerb = tempTerminalNodes[0], name = "Supply Drop" });
+
+                __instance.terminalNodes.allKeywords = tempTerminalNodes.ToArray();
+
+                List<CompatibleNoun> tempCompatibleNouns = tempTerminalNodes[0].compatibleNouns.ToList();
+
+                ammunitionCompatibleNodeIndex = tempCompatibleNouns.Count;
+
+                TerminalNode ammuntionPackNode = new TerminalNode()
+                {
+                    buyItemIndex = ammunitionItemIndex,
+                    isConfirmationNode = false,
+                    clearPreviousText = true,
+                    terminalEvent = "",
+                    displayText = "Ordered [variableAmount] ammunition packs. " +
+                    "Your new balance is [playerCredits].\r\n\r\n" +
+                    "Our contractors enjoy fast, free shipping while on the job! " +
+                    "Any purchased items will arrive hourly at your approximate location.\r\n\r\n",
+                    name = "buyAmmunitionPack2",
+                    overrideOptions = false
+                };
+                TerminalNode supplyDropNode = new TerminalNode()
+                {
+                    buyItemIndex = ammunitionItemIndex + 1,
+                    isConfirmationNode = false,
+                    clearPreviousText = true,
+                    terminalEvent = "",
+                    displayText = "Ordered [variableAmount] supply drops. " +
+                    "Your new balance is [playerCredits].\r\n\r\n" +
+                    "Our contractors enjoy fast, free shipping while on the job! " +
+                    "Any purchased items will arrive hourly at your approximate location.\r\n\r\n",
+                    name = "buyResupplyDrop2",
+                    overrideOptions = false
+                };
+
+                ammunitionPackTO = new CompatibleNoun[]
+                {
                 new CompatibleNoun() {noun = tempTerminalNodes[3], result = ammuntionPackNode},
-                new CompatibleNoun() {noun = tempTerminalNodes[4], result = tempTerminalNodes[0].compatibleNouns[0].result.terminalOptions[1].result}
-            };
-            supplyDropTO = new CompatibleNoun[]
-            {
+                new CompatibleNoun() {noun = tempTerminalNodes[4], result = tempTerminalNodes[0].compatibleNouns[2].result.terminalOptions[1].result}
+                };
+                supplyDropTO = new CompatibleNoun[]
+                {
                 new CompatibleNoun() {noun = tempTerminalNodes[3], result = supplyDropNode},
-                 new CompatibleNoun() {noun = tempTerminalNodes[4], result = tempTerminalNodes[0].compatibleNouns[0].result.terminalOptions[1].result}
-            };
+                new CompatibleNoun() {noun = tempTerminalNodes[4], result = tempTerminalNodes[0].compatibleNouns[2].result.terminalOptions[1].result}
+                };
 
-            tempCompatibleNouns.Add(new CompatibleNoun()
-            {
-                noun = tempTerminalNodes[139],
-                result = new TerminalNode()
+                tempCompatibleNouns.Add(new CompatibleNoun()
                 {
-                    buyItemIndex = 14,
-                    isConfirmationNode = true,
-                    clearPreviousText = true,
-                    itemCost = 100,
-                    overrideOptions = true,
-                    displayText =
-                    "You are not able to order ammunition pack unless you are on the mission!\n\n",
-                    name = "buyAmmunitionPack1",
-                    terminalOptions = null
-                }
-            });
-            tempCompatibleNouns.Add(new CompatibleNoun()
-            {
-                noun = tempTerminalNodes[140],
-                result = new TerminalNode()
+                    noun = tempTerminalNodes[ammunitionNodeIndex],
+                    result = new TerminalNode()
+                    {
+                        buyItemIndex = ammunitionItemIndex,
+                        isConfirmationNode = true,
+                        clearPreviousText = true,
+                        itemCost = 100,
+                        displayText =
+                        "You are not able to order ammunition pack unless you are on the mission!\n\n",
+                        name = "buyAmmunitionPack1",
+                        terminalOptions = null,
+                        terminalEvent = "",
+                        overrideOptions = false
+                    }
+                });
+                tempCompatibleNouns.Add(new CompatibleNoun()
                 {
-                    buyItemIndex = 15,
-                    isConfirmationNode = true,
-                    clearPreviousText = true,
-                    itemCost = 20,
-                    overrideOptions = true,
-                    displayText =
-                    "You are not able to order supply drop unless you are on the mission!\n\n",
-                    name = "buyResupplyDrop1",
-                    terminalOptions = null
-                }
-            });
+                    noun = tempTerminalNodes[ammunitionNodeIndex + 1],
+                    result = new TerminalNode()
+                    {
+                        buyItemIndex = ammunitionItemIndex + 1,
+                        isConfirmationNode = true,
+                        clearPreviousText = true,
+                        itemCost = 20,
+                        displayText =
+                        "You are not able to order supply drop unless you are on the mission!\n\n",
+                        name = "buyResupplyDrop1",
+                        terminalOptions = null,
+                        terminalEvent = "",
+                        overrideOptions = false
+                    }
+                });
 
-            __instance.terminalNodes.allKeywords[0].compatibleNouns = tempCompatibleNouns.ToArray();
+                __instance.terminalNodes.allKeywords[0].compatibleNouns = tempCompatibleNouns.ToArray();
+            }
+
+            hasStarted = true;
         }
 
         [HarmonyPatch("Update")]
@@ -216,7 +282,7 @@ namespace DLGMod.Patches
             {
                 for (int i = 0; i < DLGModMain.playersAmount; i++)
                 {
-                    ammunitionOrder.Add(14);
+                    ammunitionOrder.Add(ammunitionItemIndex);
                 }
 
                 __instance.orderedItemsFromTerminal = ammunitionOrder;
@@ -226,7 +292,7 @@ namespace DLGMod.Patches
             {
                 for (int i = 0; i < DLGModMain.playersAmount; i++)
                 {
-                    ammunitionOrder.Add(15);
+                    ammunitionOrder.Add(ammunitionItemIndex + 1);
                 }
 
                 __instance.orderedItemsFromTerminal = ammunitionOrder;
@@ -239,8 +305,126 @@ namespace DLGMod.Patches
         }
     }
 
+    [HarmonyPatch(typeof(Terminal))]
+    internal class MissionControllerPatch
+    {
+        internal static bool isDLGMissionHubOpened = false;
+
+        internal static string[] hazardTitles = new string[]
+        {
+            "EASY",
+            "NORMAL",
+            "RISKY",
+            "REALLY HARD",
+            "LETHAL"
+        };
+
+        [HarmonyPatch("ParsePlayerSentence")]
+        [HarmonyPostfix]
+        public static void SetUpMissionControllerHub(ref TerminalNode __result, Terminal __instance)
+        {
+            string playerText = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
+
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (char ch in playerText)
+            {
+                if (!char.IsPunctuation(ch))
+                {
+                    stringBuilder.Append(ch);
+                }
+            }
+
+            playerText = stringBuilder.ToString().ToLower();
+
+            if (playerText.Contains("dlg"))
+            {
+                for (int num = playerText.Length; num > 3; num--)
+                {
+                    if ("dlgmission".StartsWith(playerText.Substring(0, num)))
+                    {
+                        isDLGMissionHubOpened = true;
+                        __result = new TerminalNode()
+                        {
+                            displayText =
+                            "Welcome to DLG Mission Controller Hub! Here you can change your mission properties such as " +
+                            "mission hazard (difficulty) level\n\n" +
+                            "Current mission properties:\n" +
+                            $"Hazard level - {SwarmPatch.hazardLevel}: {hazardTitles[SwarmPatch.hazardLevel - 1]}\n\n" +
+                            ">HAZARD (1-5)\n" +
+                            "To change mission hazard (difficulty) level. Type this command with integer within the range (1-5)\n\n",
+                            clearPreviousText = true,
+                            terminalEvent = ""
+                        };
+                        break;
+                    }
+                }
+            }
+            else if (isDLGMissionHubOpened)
+            {
+                string[] arguments = playerText.Split(new char[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+
+                for (int num = arguments[0].Length; num > 2; num--)
+                {
+                    if ("hazard".StartsWith(arguments[0].Substring(0, num)))
+                    {
+                        if (arguments.Length > 1)
+                        {
+                            try
+                            {
+                                int newHazardLevel = int.Parse(arguments[1]);
+
+                                if (newHazardLevel > 0 && newHazardLevel < 6)
+                                {
+                                    SwarmPatch.hazardLevel = newHazardLevel;
+
+                                    __result = new TerminalNode()
+                                    {
+                                        displayText = $"Successfully changed mission hazard level to\n" +
+                                        $"{newHazardLevel}: {hazardTitles[newHazardLevel - 1]}\n\n",
+                                        clearPreviousText = true
+                                    };
+                                }
+                                else
+                                {
+                                    __result = new TerminalNode()
+                                    {
+                                        displayText = $"Operation failed because the integer you typed was out of bounds\n\n",
+                                        clearPreviousText = true,
+                                        terminalEvent = ""
+                                    };
+                                }
+                            }
+                            catch
+                            {
+                                __result = new TerminalNode()
+                                {
+                                    displayText = $"Operation failed because the text you typed wasn't an integer\n\n",
+                                    clearPreviousText = true,
+                                    terminalEvent = ""
+                                };
+                            }
+
+                        }
+                        else
+                        {
+                            __result = new TerminalNode()
+                            {
+                                displayText = $"Operation failed because you didn't type hazard level integer\n\n",
+                                clearPreviousText = true,
+                                terminalEvent = ""
+                            };
+                        }
+                    }
+                }
+
+                isDLGMissionHubOpened = false;
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(PlayerControllerB))]
-    internal static class PlayerControllerPatch
+    internal class PlayerControllerPatch
     {
         internal static float currentHealProgress = 0f;
 
@@ -259,9 +443,11 @@ namespace DLGMod.Patches
                 {
                     __instance.MakeCriticallyInjured(false);
                 }
+
                 __instance.drunkness = 0f;
                 currentHealProgress += Time.deltaTime * 10f;
-                if (currentHealProgress > 1f)
+
+                if (currentHealProgress > 1f && __instance.health < 100f)
                 {
                     __instance.health++;
                     GameObject.FindObjectOfType<HUDManager>().UpdateHealthUI(__instance.health, false);
@@ -278,8 +464,6 @@ namespace DLGMod.Patches
         [HarmonyPrefix]
         public static void GetSwarmMessage(ref string chatMessage)
         {
-            DLGModMain.logger.LogInfo(chatMessage);
-
             TimeOfDay timeOfDay = GameObject.FindObjectOfType<TimeOfDay>();
 
             switch (chatMessage)
@@ -307,6 +491,7 @@ namespace DLGMod.Patches
         internal static bool hasBeenCalled = false;
 
         internal static float dangerLevel = 5f;
+        internal static int hazardLevel = 2;
 
         internal static List<int> swarmEnemiesIndex = new List<int>();
 
@@ -363,7 +548,7 @@ namespace DLGMod.Patches
             }
             else if (enemiesAmount >= 3)
             {
-                chance += 0.01f * dangerLevel * __instance.normalizedTimeOfDay;
+                chance += 0.01f * dangerLevel * __instance.normalizedTimeOfDay * hazardLevel;
             }
             else
             {
@@ -373,7 +558,7 @@ namespace DLGMod.Patches
                     isSwarm = false;
                 }
 
-                chance += dangerLevel * __instance.normalizedTimeOfDay * Random.Range(0.5f, 1f);
+                chance += dangerLevel * __instance.normalizedTimeOfDay * Random.Range(0.5f, 1f) * hazardLevel;
             }
 
             hasBeenCalled = true;
@@ -406,7 +591,7 @@ namespace DLGMod.Patches
     }
 
     [HarmonyPatch(typeof(ItemDropship))]
-    internal static class SpawnAmmunitionPatch
+    internal class SpawnAmmunitionPatch
     {
         internal static Terminal terminal = GameObject.FindObjectOfType<Terminal>();
 
@@ -483,7 +668,7 @@ namespace DLGMod.Patches
     }
 
     [HarmonyPatch(typeof(TimeOfDay))]
-    internal static class DLGTipsPatch
+    internal class DLGTipsPatch
     {
         internal static HUDManager hudManager = GameObject.FindObjectOfType<HUDManager>();
 
