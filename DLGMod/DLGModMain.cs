@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DLGMod
 {
-    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.4.0")]
+    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.4.1")]
     public class DLGModMain : BaseUnityPlugin
     {
         internal const string GUID = "XRTG074TheDeveloper.DeepLethalGalactic";
@@ -20,7 +20,7 @@ namespace DLGMod
         internal static string filesPath;
 
 
-        internal static List<AudioClip> MissionControlQuotesSFX;
+        //internal static List<AudioClip> MissionControlQuotesSFX;
 
         internal static List<AudioClip> swarmSFX;
 

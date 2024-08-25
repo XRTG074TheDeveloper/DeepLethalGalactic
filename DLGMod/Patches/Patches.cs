@@ -53,6 +53,15 @@ namespace DLGMod.Patches
             GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
                     .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.overrideOptions = false;
 
+            MissionControllerPatch.DLGMissionHub.displayText =
+            "Welcome to DLG Mission Controller Hub! Here you can view and change your mission properties such as " +
+            "mission hazard (difficulty) level\n\n" +
+            "Current mission properties:\n" +
+            $"Hazard level - {SwarmPatch.hazardLevel}: {MissionControllerPatch.hazardTitles[SwarmPatch.hazardLevel - 1]}\n\n" +
+            ">HAZARD (1-5)\n" +
+            "To change mission hazard (difficulty) level. Type this command with integer within the range (1-5)\n\n";
+            MissionControllerPatch.isOnTheMission = false;
+
             SwarmPatch.swarmEnemiesIndex.Clear();
 
             SwarmPatch.hudManager = GameObject.FindObjectOfType<HUDManager>();
@@ -87,6 +96,13 @@ namespace DLGMod.Patches
                     .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.overrideOptions = true;
 
                 SwarmPatch.dangerLevel = 5f;
+                MissionControllerPatch.DLGMissionHub.displayText =
+                "Welcome to DLG Mission Controller Hub! Here you can view and change your mission properties such as " +
+                "mission hazard (difficulty) level\n\n" +
+                "Current mission properties:\n" +
+                $"Hazard level - {SwarmPatch.hazardLevel}: {MissionControllerPatch.hazardTitles[SwarmPatch.hazardLevel - 1]}\n\n" +
+                "You are not able change your mission settings on the mission!\n\n";
+                MissionControllerPatch.isOnTheMission = true;
 
                 foreach (char ch in __instance.currentLevel.riskLevel)
                 {
@@ -125,6 +141,15 @@ namespace DLGMod.Patches
                 .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.terminalOptions = null;
             GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
                     .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.overrideOptions = false;
+
+            MissionControllerPatch.DLGMissionHub.displayText =
+            "Welcome to DLG Mission Controller Hub! Here you can view and change your mission properties such as " +
+            "mission hazard (difficulty) level\n\n" +
+            "Current mission properties:\n" +
+            $"Hazard level - {SwarmPatch.hazardLevel}: {MissionControllerPatch.hazardTitles[SwarmPatch.hazardLevel - 1]}\n\n" +
+            ">HAZARD (1-5)\n" +
+            "To change mission hazard (difficulty) level. Type this command with integer within the range (1-5)\n\n";
+            MissionControllerPatch.isOnTheMission = false;
 
             SwarmPatch.isSwarm = false;
             SwarmPatch.isSwarmSFXFading = true;
@@ -309,6 +334,13 @@ namespace DLGMod.Patches
     internal class MissionControllerPatch
     {
         internal static bool isDLGMissionHubOpened = false;
+        internal static bool isOnTheMission = false;
+
+        internal static TerminalNode DLGMissionHub = new TerminalNode()
+        {
+            clearPreviousText = true,
+            terminalEvent = ""
+        };
 
         internal static string[] hazardTitles = new string[]
         {
@@ -321,7 +353,7 @@ namespace DLGMod.Patches
 
         [HarmonyPatch("ParsePlayerSentence")]
         [HarmonyPostfix]
-        public static void SetUpMissionControllerHub(ref TerminalNode __result, Terminal __instance)
+        public static void MissionControllerHub(ref TerminalNode __result, Terminal __instance)
         {
             string playerText = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
 
@@ -344,23 +376,12 @@ namespace DLGMod.Patches
                     if ("dlgmission".StartsWith(playerText.Substring(0, num)))
                     {
                         isDLGMissionHubOpened = true;
-                        __result = new TerminalNode()
-                        {
-                            displayText =
-                            "Welcome to DLG Mission Controller Hub! Here you can change your mission properties such as " +
-                            "mission hazard (difficulty) level\n\n" +
-                            "Current mission properties:\n" +
-                            $"Hazard level - {SwarmPatch.hazardLevel}: {hazardTitles[SwarmPatch.hazardLevel - 1]}\n\n" +
-                            ">HAZARD (1-5)\n" +
-                            "To change mission hazard (difficulty) level. Type this command with integer within the range (1-5)\n\n",
-                            clearPreviousText = true,
-                            terminalEvent = ""
-                        };
+                        __result = DLGMissionHub;
                         break;
                     }
                 }
             }
-            else if (isDLGMissionHubOpened)
+            else if (isDLGMissionHubOpened && !isOnTheMission)
             {
                 string[] arguments = playerText.Split(new char[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
 

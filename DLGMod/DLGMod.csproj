@@ -36,29 +36,11 @@
     <Reference Include="0Harmony">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\BepInEx\core\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="AsmResolver, Version=5.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\BepInEx.AssemblyPublicizer.MSBuild.0.4.2\lib\net472\AsmResolver.dll</HintPath>
-    </Reference>
-    <Reference Include="AsmResolver.DotNet, Version=5.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\BepInEx.AssemblyPublicizer.MSBuild.0.4.2\lib\net472\AsmResolver.DotNet.dll</HintPath>
-    </Reference>
-    <Reference Include="AsmResolver.PE, Version=5.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\BepInEx.AssemblyPublicizer.MSBuild.0.4.2\lib\net472\AsmResolver.PE.dll</HintPath>
-    </Reference>
-    <Reference Include="AsmResolver.PE.File, Version=5.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\BepInEx.AssemblyPublicizer.MSBuild.0.4.2\lib\net472\AsmResolver.PE.File.dll</HintPath>
-    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\BepInEx\core\BepInEx.dll</HintPath>
-    </Reference>
-    <Reference Include="BepInEx.AssemblyPublicizer, Version=0.4.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\BepInEx.AssemblyPublicizer.MSBuild.0.4.2\lib\net472\BepInEx.AssemblyPublicizer.dll</HintPath>
-    </Reference>
-    <Reference Include="BepInEx.AssemblyPublicizer.MSBuild, Version=0.4.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\BepInEx.AssemblyPublicizer.MSBuild.0.4.2\lib\net472\BepInEx.AssemblyPublicizer.MSBuild.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
