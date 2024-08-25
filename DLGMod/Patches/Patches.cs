@@ -95,7 +95,6 @@ namespace DLGMod.Patches
                 GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
                     .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex + 1].result.overrideOptions = true;
 
-                SwarmPatch.dangerLevel = 5f;
                 MissionControllerPatch.DLGMissionHub.displayText =
                 "Welcome to DLG Mission Controller Hub! Here you can view and change your mission properties such as " +
                 "mission hazard (difficulty) level\n\n" +
@@ -104,18 +103,20 @@ namespace DLGMod.Patches
                 "You are not able change your mission settings on the mission!\n\n";
                 MissionControllerPatch.isOnTheMission = true;
 
+                SwarmPatch.dangerLevel = 1f;
+
                 foreach (char ch in __instance.currentLevel.riskLevel)
                 {
                     switch (ch)
                     {
                         case 'A':
-                            SwarmPatch.dangerLevel += 10f;
+                            SwarmPatch.dangerLevel += 4f;
                             break;
                         case 'S':
-                            SwarmPatch.dangerLevel += 20f;
+                            SwarmPatch.dangerLevel += 9f;
                             break;
                         case '+':
-                            SwarmPatch.dangerLevel += 10f;
+                            SwarmPatch.dangerLevel += 12f;
                             break;
                     }
                 }
@@ -351,6 +352,29 @@ namespace DLGMod.Patches
             "LETHAL"
         };
 
+        public static void UpdateMissionValues()
+        {
+            if (!isOnTheMission)
+            {
+                MissionControllerPatch.DLGMissionHub.displayText =
+                "Welcome to DLG Mission Controller Hub! Here you can view and change your mission properties such as " +
+                "mission hazard (difficulty) level\n\n" +
+                "Current mission properties:\n" +
+                $"Hazard level - {SwarmPatch.hazardLevel}: {MissionControllerPatch.hazardTitles[SwarmPatch.hazardLevel - 1]}\n\n" +
+                ">HAZARD (1-5)\n" +
+                "To change mission hazard (difficulty) level. Type this command with integer within the range (1-5)\n\n";
+            }
+            else
+            {
+                MissionControllerPatch.DLGMissionHub.displayText =
+                "Welcome to DLG Mission Controller Hub! Here you can view and change your mission properties such as " +
+                "mission hazard (difficulty) level\n\n" +
+                "Current mission properties:\n" +
+                $"Hazard level - {SwarmPatch.hazardLevel}: {MissionControllerPatch.hazardTitles[SwarmPatch.hazardLevel - 1]}\n\n" +
+                "You are not able change your mission settings on the mission!\n\n";
+            }
+        }
+
         [HarmonyPatch("ParsePlayerSentence")]
         [HarmonyPostfix]
         public static void MissionControllerHub(ref TerminalNode __result, Terminal __instance)
@@ -376,6 +400,7 @@ namespace DLGMod.Patches
                     if ("dlgmission".StartsWith(playerText.Substring(0, num)))
                     {
                         isDLGMissionHubOpened = true;
+                        UpdateMissionValues();
                         __result = DLGMissionHub;
                         break;
                     }
@@ -544,6 +569,8 @@ namespace DLGMod.Patches
 
             int rollDice = UnityEngine.Random.Range(30, 100);
 
+            DLGModMain.logger.LogInfo(chance);
+
             int enemiesAmount = 0;
 
             foreach (EnemyAI enemy in GameObject.FindObjectsOfType<EnemyAI>())
@@ -551,9 +578,9 @@ namespace DLGMod.Patches
                 if (!enemy.isEnemyDead && enemy.enemyType.enemyName == "Crawler") enemiesAmount++;
             }
 
-            if (rollDice < chance && enemiesAmount < 3)
+            if (rollDice < chance && enemiesAmount < 3 && (__instance.normalizedTimeOfDay > 0.155f || chance > 55))
             {
-                for (int i = 0; i < (DLGModMain.playersAmount) * (5 + dangerLevel / 15); i++)
+                for (int i = 0; i < (DLGModMain.playersAmount) * (dangerLevel / 2); i++)
                 {
                     int enemyToSpawn = swarmEnemiesIndex[0];
                     EnemyVent vent = roundManager.allEnemyVents[UnityEngine.Random.Range(1, roundManager.allEnemyVents.Length)];
