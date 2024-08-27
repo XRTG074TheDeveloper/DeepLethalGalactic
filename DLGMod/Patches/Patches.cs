@@ -65,6 +65,10 @@ namespace DLGMod.Patches
             SwarmPatch.swarmEnemiesIndex.Clear();
 
             SwarmPatch.hudManager = GameObject.FindObjectOfType<HUDManager>();
+
+            DLGModMain.logger.LogInfo("Initializing game:\n" +
+                $"\tMission properties are unlocked\n" +
+                $"\tAmmunition Pack and Ressuply Drop are unbuyable now");
         }
 
         [HarmonyPatch("StartGame")]
@@ -121,6 +125,12 @@ namespace DLGMod.Patches
                     }
                 }
             }
+
+            DLGModMain.logger.LogInfo("Starting game:\n" +
+                $"\tMoon danger level: {SwarmPatch.dangerLevel}\n" +
+                $"\tMission hazard level: {SwarmPatch.hazardLevel}\n\n" +
+                $"\tMission properties are locked\n" +
+                $"\tAmmunition Pack and Ressuply Drop are buyable now");
         }
 
         [HarmonyPatch("ShipLeave")]
@@ -155,6 +165,10 @@ namespace DLGMod.Patches
             SwarmPatch.isSwarm = false;
             SwarmPatch.isSwarmSFXFading = true;
             SwarmPatch.chance = 0;
+
+            DLGModMain.logger.LogInfo("Finishing game:\n" +
+                $"\tMission properties are unlocked\n" +
+                $"\tAmmunition Pack and Ressuply Drop are unbuyable now");
         }
     }
 
@@ -202,7 +216,6 @@ namespace DLGMod.Patches
 
             if (!hasStarted)
             {
-
                 List<TerminalKeyword> tempTerminalNodes = __instance.terminalNodes.allKeywords.ToList();
 
                 ammunitionNodeIndex = tempTerminalNodes.Count;
@@ -306,25 +319,11 @@ namespace DLGMod.Patches
 
             if (!resupplyOrdered)
             {
-                for (int i = 0; i < DLGModMain.playersAmount; i++)
-                {
-                    ammunitionOrder.Add(ammunitionItemIndex);
-                }
-
-                __instance.orderedItemsFromTerminal = ammunitionOrder;
-                __instance.numberOfItemsInDropship = ammunitionOrder.Count;
-            }
-            else
-            {
-                for (int i = 0; i < DLGModMain.playersAmount; i++)
-                {
-                    ammunitionOrder.Add(ammunitionItemIndex + 1);
-                }
-
+                ammunitionOrder.Add(ammunitionItemIndex);
                 __instance.orderedItemsFromTerminal = ammunitionOrder;
                 __instance.numberOfItemsInDropship = ammunitionOrder.Count;
 
-                resupplyOrdered = false;
+                DLGModMain.logger.LogInfo("Ordered ammunition pack");
             }
 
             shouldBeSent = false;
@@ -495,6 +494,8 @@ namespace DLGMod.Patches
 
                 if (currentHealProgress > 1f && __instance.health < 100f)
                 {
+                    DLGModMain.logger.LogInfo("Healed 1HP from TZP-MedKit");
+
                     __instance.health++;
                     GameObject.FindObjectOfType<HUDManager>().UpdateHealthUI(__instance.health, false);
                     currentHealProgress = 0f;
@@ -569,7 +570,8 @@ namespace DLGMod.Patches
 
             int rollDice = UnityEngine.Random.Range(30, 100);
 
-            DLGModMain.logger.LogInfo(chance);
+            DLGModMain.logger.LogInfo($"Current swarm chance: {chance}\n" +
+                $"Randomly chosen swarm value: {rollDice}");
 
             int enemiesAmount = 0;
 
@@ -580,6 +582,8 @@ namespace DLGMod.Patches
 
             if (rollDice < chance && enemiesAmount < 3 && (__instance.normalizedTimeOfDay > 0.155f || chance > 55))
             {
+                DLGModMain.logger.LogInfo("Swaaaarm started");
+
                 for (int i = 0; i < (DLGModMain.playersAmount) * (dangerLevel / 2); i++)
                 {
                     int enemyToSpawn = swarmEnemiesIndex[0];
@@ -604,6 +608,8 @@ namespace DLGMod.Patches
                 {
                     hudManager.AddTextToChatOnServer("SWARM IS ALMOST OVER");
                     isSwarm = false;
+
+                    DLGModMain.logger.LogInfo("Swarm is ending");
                 }
 
                 chance += dangerLevel * __instance.normalizedTimeOfDay * Random.Range(0.5f, 1f) * hazardLevel;
@@ -618,6 +624,8 @@ namespace DLGMod.Patches
         {
             if (isSwarm && !__instance.TimeOfDayMusic.isPlaying && !__instance.TimeOfDayMusic.loop)
             {
+                DLGModMain.logger.LogInfo("Started looped part of soundtrack");
+
                 hudManager.AddTextToChatOnServer("THEY ARE HERE!!!");
             }
             if (!isSwarm && __instance.TimeOfDayMusic.isPlaying)
@@ -659,16 +667,22 @@ namespace DLGMod.Patches
                 {
                     if (itemsToDeliver[i] == 14)
                     {
-                        for (int j = 0; j < DLGModMain.playersAmount; j++)
+                        DLGModMain.logger.LogInfo("Dropship opened. Spawning:");
+
+                        for (int j = 0; j < 1; j++)
                         {
+                            DLGModMain.logger.LogInfo("\tShotgun");
+
                             GameObject obj = GameObject.Instantiate(allItemsList[59].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Shotgun
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
                             obj.GetComponent<NetworkObject>().Spawn();
                             num = ((num < 3) ? (num + 1) : 0);
                         }
-                        for (int j = 0; j < DLGModMain.playersAmount * 8; j++)
+                        for (int j = 0; j < 12; j++)
                         {
+                            DLGModMain.logger.LogInfo("\tShotgun Ammo");
+
                             GameObject obj = GameObject.Instantiate(allItemsList[60].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Shotgun ammo
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
@@ -681,8 +695,12 @@ namespace DLGMod.Patches
                     }
                     else if (itemsToDeliver[i] == 15)
                     {
-                        for (int j = 0; j < DLGModMain.playersAmount * 5; j++)
+                        DLGModMain.logger.LogInfo("Dropship opened. Spawning:");
+
+                        for (int j = 0; j < DLGModMain.playersAmount * 7; j++)
                         {
+                            DLGModMain.logger.LogInfo("\tShotgun Ammo");
+
                             GameObject obj = GameObject.Instantiate(allItemsList[60].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Shotgun ammo
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
@@ -691,6 +709,8 @@ namespace DLGMod.Patches
                         }
                         for (int j = 0; j < DLGModMain.playersAmount; j++)
                         {
+                            DLGModMain.logger.LogInfo("\tTZP-MedKit");
+
                             GameObject obj = GameObject.Instantiate(allItemsList[13].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Health
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
@@ -732,6 +752,8 @@ namespace DLGMod.Patches
 
                 if (shotgunAmmo.Count <= 2)
                 {
+                    DLGModMain.logger.LogInfo("Show Out of ammo Hint");
+
                     hudManager.DisplayTip("Out of ammo?",
                         "Don't worry! You can buy supply drop from terminal store",
                         false,
