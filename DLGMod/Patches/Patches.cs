@@ -11,10 +11,14 @@ namespace DLGMod.Patches
     [HarmonyPatch(typeof(StartOfRound))]
     internal class GameControllerPatch
     {
+        internal static bool hasStartedHost = false;
+
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         public static void StarterSetUp(StartOfRound __instance)
         {
+            hasStartedHost = false;
+
             SwarmPatch.isSwarm = false;
             SwarmPatch.isSwarmSFXFading = false;
             SwarmPatch.chance = 0;
@@ -89,7 +93,11 @@ namespace DLGMod.Patches
         {
             if (__instance.currentLevelID != 3)
             {
-                GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer("dlgnetsync_onmission");
+                if (!hasStartedHost)
+                {
+                    hasStartedHost = true;
+                    GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer("dlgnetsync_onmission");
+                }
 
                 DLGModMain.SendAmmunition(__instance.connectedPlayersAmount + 1);
 
@@ -151,6 +159,8 @@ namespace DLGMod.Patches
         [HarmonyPostfix]
         public static void OnShipStartLeaving()
         {
+            hasStartedHost = false;
+
             GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
                 .compatibleNouns[AmmunitionPatch.ammunitionCompatibleNodeIndex].result.displayText =
             "You are not able to order ammunition pack unless you are on the mission!\n\n";
@@ -567,8 +577,6 @@ namespace DLGMod.Patches
 
             if (nameOfUserWhoTyped == "" && chatMessage.ToLower().Contains("dlgnetsync"))
             {
-                DLGModMain.logger.LogInfo(chatMessage);
-
                 DLGModMain.logger.LogInfo("Recieved DLG NetStuff sync request. Parsing request arguments...");
 
                 string[] requestArguments = chatMessage.Split('_');
@@ -578,6 +586,7 @@ namespace DLGMod.Patches
                     case "onmission":
                         DLGModMain.logger.LogInfo("Set Client on the mission!");
                         GameControllerPatch.OnGameStarted(GameObject.FindObjectOfType<StartOfRound>());
+
                         break;
                     case "missionhazard":
                         int newHazardLevel = int.Parse(requestArguments[2]);
