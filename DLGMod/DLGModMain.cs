@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DLGMod
 {
-    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.4.2")]
+    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.4.3")]
     public class DLGModMain : BaseUnityPlugin
     {
         internal const string GUID = "XRTG074TheDeveloper.DeepLethalGalactic";
@@ -57,6 +57,7 @@ namespace DLGMod
             harmonyInstance.PatchAll(typeof(SpawnAmmunitionPatch));
             harmonyInstance.PatchAll(typeof(PlayerControllerPatch));
             harmonyInstance.PatchAll(typeof(MissionControllerPatch));
+            harmonyInstance.PatchAll(typeof(DLGNetStuffSync));
         }
 
         internal static void SendAmmunition(int _playersAmount)

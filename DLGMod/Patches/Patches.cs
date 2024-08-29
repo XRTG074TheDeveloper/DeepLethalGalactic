@@ -71,12 +71,26 @@ namespace DLGMod.Patches
                 $"\tAmmunition Pack and Ressuply Drop are unbuyable now");
         }
 
+        [HarmonyPatch("OnPlayerConnectedClientRpc")]
+        [HarmonyPostfix]
+        public static void OnClientConnected(StartOfRound __instance)
+        {
+            if (__instance.IsHost)
+            {
+                DLGModMain.logger.LogInfo("New client connected. Sending DLG NetStuff sync request");
+
+                GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer($"dlgnetsync_missionhazard_{SwarmPatch.hazardLevel}");
+            }
+        }
+
         [HarmonyPatch("StartGame")]
         [HarmonyPostfix]
         public static void OnGameStarted(StartOfRound __instance)
         {
             if (__instance.currentLevelID != 3)
             {
+                GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer("dlgnetsync_onmission");
+
                 DLGModMain.SendAmmunition(__instance.connectedPlayersAmount + 1);
 
                 GameObject.FindObjectOfType<Terminal>().terminalNodes.allKeywords[0]
@@ -190,35 +204,30 @@ namespace DLGMod.Patches
         internal static int ammunitionCompatibleNodeIndex;
         internal static int ammunitionItemIndex;
 
-        internal static bool hasStarted = false;
-
         [HarmonyPatch("Start")]
         [HarmonyPrefix]
         public static void SetUpAmmunition(Terminal __instance)
         {
-            if (!__instance.IsHost) return;
-
             List<Item> tempBuyableItems = __instance.buyableItemsList.ToList();
 
-            ammunitionItemIndex = tempBuyableItems.Count;
+            if (ammunitionNodeIndex == 0)
+            {
+                ammunitionItemIndex = tempBuyableItems.Count;
+            }
 
             tempBuyableItems.Add(new Item() { itemName = "Ammunition Pack", creditsWorth = 100 }); // Ammunition pack
             tempBuyableItems.Add(new Item() { itemName = "Supply Drop", creditsWorth = 20 }); // Resupply drop
 
             __instance.buyableItemsList = tempBuyableItems.ToArray();
 
-            List<int> tempItemSalesPercentages = __instance.itemSalesPercentages.ToList();
-
-            tempItemSalesPercentages.Add(100);
-            tempItemSalesPercentages.Add(100);
-
-            __instance.itemSalesPercentages = tempItemSalesPercentages.ToArray();
-
-            if (!hasStarted)
+            if (__instance.terminalNodes.allKeywords[ammunitionNodeIndex].name != "Ammunition Pack")
             {
                 List<TerminalKeyword> tempTerminalNodes = __instance.terminalNodes.allKeywords.ToList();
 
-                ammunitionNodeIndex = tempTerminalNodes.Count;
+                if (ammunitionNodeIndex == 0)
+                {
+                    ammunitionNodeIndex = tempTerminalNodes.Count;
+                }
 
                 tempTerminalNodes.Add(new TerminalKeyword() { word = "ammunition pack", defaultVerb = tempTerminalNodes[0], name = "Ammunition Pack" });
                 tempTerminalNodes.Add(new TerminalKeyword() { word = "supply drop", defaultVerb = tempTerminalNodes[0], name = "Supply Drop" });
@@ -227,7 +236,10 @@ namespace DLGMod.Patches
 
                 List<CompatibleNoun> tempCompatibleNouns = tempTerminalNodes[0].compatibleNouns.ToList();
 
-                ammunitionCompatibleNodeIndex = tempCompatibleNouns.Count;
+                if (ammunitionCompatibleNodeIndex == 0)
+                {
+                    ammunitionCompatibleNodeIndex = tempCompatibleNouns.Count;
+                }
 
                 TerminalNode ammuntionPackNode = new TerminalNode()
                 {
@@ -304,8 +316,20 @@ namespace DLGMod.Patches
 
                 __instance.terminalNodes.allKeywords[0].compatibleNouns = tempCompatibleNouns.ToArray();
             }
+        }
 
-            hasStarted = true;
+        [HarmonyPatch("InitializeItemSalesPercentages")]
+        [HarmonyPostfix]
+        public static void SetUpAmmunition2(Terminal __instance)
+        {
+            List<int> tempItemSalesPercentages = __instance.itemSalesPercentages.ToList();
+
+            DLGModMain.logger.LogInfo(tempItemSalesPercentages.Count);
+
+            tempItemSalesPercentages.Add(100);
+            tempItemSalesPercentages.Add(100);
+
+            __instance.itemSalesPercentages = tempItemSalesPercentages.ToArray();
         }
 
         [HarmonyPatch("Update")]
@@ -421,7 +445,7 @@ namespace DLGMod.Patches
 
                                 if (newHazardLevel > 0 && newHazardLevel < 6)
                                 {
-                                    SwarmPatch.hazardLevel = newHazardLevel;
+                                    GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer($"dlgnetsync_missionhazard_{newHazardLevel}");
 
                                     __result = new TerminalNode()
                                     {
@@ -528,6 +552,47 @@ namespace DLGMod.Patches
                     timeOfDay.TimeOfDayMusic.loop = false;
                     SwarmPatch.isSwarmSFXFading = true;
                     return;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(HUDManager))]
+    internal class DLGNetStuffSync
+    {
+        [HarmonyPatch("AddChatMessage")]
+        [HarmonyPrefix]
+        private static bool RecieveSyncRequest(ref string chatMessage, ref string nameOfUserWhoTyped)
+        {
+            DLGModMain.logger.LogInfo(chatMessage);
+
+            if (nameOfUserWhoTyped == "" && chatMessage.ToLower().Contains("dlgnetsync"))
+            {
+                DLGModMain.logger.LogInfo(chatMessage);
+
+                DLGModMain.logger.LogInfo("Recieved DLG NetStuff sync request. Parsing request arguments...");
+
+                string[] requestArguments = chatMessage.Split('_');
+
+                switch (requestArguments[1])
+                {
+                    case "onmission":
+                        DLGModMain.logger.LogInfo("Set Client on the mission!");
+                        GameControllerPatch.OnGameStarted(GameObject.FindObjectOfType<StartOfRound>());
+                        break;
+                    case "missionhazard":
+                        int newHazardLevel = int.Parse(requestArguments[2]);
+
+                        SwarmPatch.hazardLevel = newHazardLevel;
+
+                        DLGModMain.logger.LogInfo($"Set client hazard level to {newHazardLevel} - {MissionControllerPatch.hazardTitles[newHazardLevel - 1]}");
+                        break;
+                }
+
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
     }
