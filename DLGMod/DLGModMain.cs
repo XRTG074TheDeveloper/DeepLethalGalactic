@@ -58,6 +58,8 @@ namespace DLGMod
             harmonyInstance.PatchAll(typeof(PlayerControllerPatch));
             harmonyInstance.PatchAll(typeof(MissionControllerPatch));
             harmonyInstance.PatchAll(typeof(DLGNetStuffSync));
+            harmonyInstance.PatchAll(typeof(DLGEnemyAIPatch));
+            harmonyInstance.PatchAll(typeof(SwarmCrawlerDamagePatch));
         }
 
         internal static void SendAmmunition(int _playersAmount)

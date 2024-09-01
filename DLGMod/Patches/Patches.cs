@@ -23,6 +23,9 @@ namespace DLGMod.Patches
             SwarmPatch.isSwarmSFXFading = false;
             SwarmPatch.chance = 0;
             SwarmPatch.dangerLevel = 5f;
+            SwarmPatch.enemiesToSpawn = 0;
+
+            SwarmPatch.hasStarted = false;
 
             GameObject.FindObjectOfType<TimeOfDay>().TimeOfDayMusic.Stop();
 
@@ -146,13 +149,15 @@ namespace DLGMod.Patches
                             break;
                     }
                 }
-            }
 
-            DLGModMain.logger.LogInfo("Starting game:\n" +
+                SwarmPatch.SetUpSwarmStuff(__instance.allPlayerScripts);
+
+                DLGModMain.logger.LogInfo("Starting game:\n" +
                 $"\tMoon danger level: {SwarmPatch.dangerLevel}\n" +
                 $"\tMission hazard level: {SwarmPatch.hazardLevel}\n\n" +
                 $"\tMission properties are locked\n" +
                 $"\tAmmunition Pack and Ressuply Drop are buyable now");
+            }
         }
 
         [HarmonyPatch("ShipLeave")]
@@ -187,8 +192,12 @@ namespace DLGMod.Patches
             MissionControllerPatch.isOnTheMission = false;
 
             SwarmPatch.isSwarm = false;
-            SwarmPatch.isSwarmSFXFading = true;
+            SwarmPatch.isSwarmSFXFading = false;
             SwarmPatch.chance = 0;
+            SwarmPatch.dangerLevel = 5f;
+            SwarmPatch.enemiesToSpawn = 0;
+
+            SwarmPatch.hasStarted = false;
 
             DLGModMain.logger.LogInfo("Finishing game:\n" +
                 $"\tMission properties are unlocked\n" +
@@ -602,120 +611,6 @@ namespace DLGMod.Patches
             else
             {
                 return true;
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(TimeOfDay))]
-    internal class SwarmPatch
-    {
-        internal static bool hasBeenCalled = false;
-
-        internal static float dangerLevel = 5f;
-        internal static int hazardLevel = 2;
-
-        internal static List<int> swarmEnemiesIndex = new List<int>();
-
-        internal static float chance = 0;
-
-        internal static bool isSwarm = false;
-        internal static bool isSwarmSFXFading = false;
-
-        internal static HUDManager hudManager = GameObject.FindObjectOfType<HUDManager>();
-
-        [HarmonyPatch("SyncTimeClientRpc")]
-        [HarmonyPostfix]
-        public static void RollSwarmDice(TimeOfDay __instance)
-        {
-            if (!__instance.IsHost) return;
-
-            if (hasBeenCalled)
-            {
-                hasBeenCalled = false;
-                return;
-            }
-
-            RoundManager roundManager = GameObject.FindObjectOfType<RoundManager>();
-
-            if (swarmEnemiesIndex.Count == 0)
-            {
-                swarmEnemiesIndex.Add(((roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Crawler"))));
-            }
-
-            int rollDice = UnityEngine.Random.Range(30, 100);
-
-            DLGModMain.logger.LogInfo($"Current swarm chance: {chance}\n" +
-                $"Randomly chosen swarm value: {rollDice}");
-
-            int enemiesAmount = 0;
-
-            foreach (EnemyAI enemy in GameObject.FindObjectsOfType<EnemyAI>())
-            {
-                if (!enemy.isEnemyDead && enemy.enemyType.enemyName == "Crawler") enemiesAmount++;
-            }
-
-            if (rollDice < chance && enemiesAmount < 3 && (__instance.normalizedTimeOfDay > 0.155f || chance > 55))
-            {
-                DLGModMain.logger.LogInfo("Swaaaarm started");
-
-                for (int i = 0; i < (DLGModMain.playersAmount) * (dangerLevel / 2); i++)
-                {
-                    int enemyToSpawn = swarmEnemiesIndex[0];
-                    EnemyVent vent = roundManager.allEnemyVents[UnityEngine.Random.Range(1, roundManager.allEnemyVents.Length)];
-
-                    roundManager.SpawnEnemyOnServer(vent.transform.position, vent.transform.eulerAngles.y, enemyToSpawn);
-                }
-
-                isSwarm = true;
-
-                hudManager.AddTextToChatOnServer("SWARM!");
-
-                chance = 0f;
-            }
-            else if (enemiesAmount >= 3)
-            {
-                chance += 0.01f * dangerLevel * __instance.normalizedTimeOfDay * hazardLevel;
-            }
-            else
-            {
-                if (isSwarm)
-                {
-                    hudManager.AddTextToChatOnServer("SWARM IS ALMOST OVER");
-                    isSwarm = false;
-
-                    DLGModMain.logger.LogInfo("Swarm is ending");
-                }
-
-                chance += dangerLevel * __instance.normalizedTimeOfDay * Random.Range(0.5f, 1f) * hazardLevel;
-            }
-
-            hasBeenCalled = true;
-        }
-
-        [HarmonyPatch("Update")]
-        [HarmonyPostfix]
-        public static void ChangeSwarmSFX(TimeOfDay __instance)
-        {
-            if (isSwarm && !__instance.TimeOfDayMusic.isPlaying && !__instance.TimeOfDayMusic.loop)
-            {
-                DLGModMain.logger.LogInfo("Started looped part of soundtrack");
-
-                hudManager.AddTextToChatOnServer("THEY ARE HERE!!!");
-            }
-            if (!isSwarm && __instance.TimeOfDayMusic.isPlaying)
-            {
-                if (isSwarmSFXFading)
-                {
-                    if (__instance.TimeOfDayMusic.volume > 0)
-                    {
-                        __instance.TimeOfDayMusic.volume -= 0.08f * Time.deltaTime;
-                    }
-                    else
-                    {
-                        __instance.TimeOfDayMusic.Stop();
-                        SwarmPatch.isSwarmSFXFading = false;
-                    }
-                }
             }
         }
     }
