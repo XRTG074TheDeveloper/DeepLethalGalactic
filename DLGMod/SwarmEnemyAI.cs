@@ -2,7 +2,7 @@
 using GameNetcodeStuff;
 using HarmonyLib;
 using System.Collections.Generic;
-using System.Reflection.Emit;
+using Unity.Netcode;
 using UnityEngine;
 
 public class DLGEnemyAI : MonoBehaviour
@@ -41,6 +41,10 @@ public class DLGEnemyAI : MonoBehaviour
                 dLGEnemyType = DLGEnemyType.SwarmEnemy;
             }
         }
+        else
+        {
+            dLGEnemyType = DLGEnemyType.CuteUWULootbug;
+        }
 
         swarmAllocation = GameObject.FindObjectOfType<SwarmAllocation>();
         enemyAI = GetComponent<EnemyAI>();
@@ -58,7 +62,7 @@ public class DLGEnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (enemyAI.currentBehaviourStateIndex == 1) return;
+        if (enemyAI.currentBehaviourStateIndex == 1 || dLGEnemyType == DLGEnemyType.CuteUWULootbug) return;
 
         timer += Time.deltaTime;
 
@@ -71,14 +75,14 @@ public class DLGEnemyAI : MonoBehaviour
 
         if (targetPlayerIndex != -1)
         {
-            //if (!enemyAI.GetPathDistance(swarmAllocation.players[targetPlayerIndex].transform.position, gameObject.transform.position))
-            //{
-            //DLGModMain.logger.LogInfo($"Swarm Enemy cannot get to the player: {swarmAllocation.players[targetPlayerIndex].playerUsername}");
-            //swarmAllocation.enemiesTargeting[targetPlayerIndex]--;
-            //targetPlayerIndex = -1;
-            //timer = 0f;
-            //return;
-            //}
+            if (!enemyAI.GetPathDistance(swarmAllocation.players[targetPlayerIndex].transform.position, gameObject.transform.position))
+            {
+                DLGModMain.logger.LogInfo($"Swarm Enemy cannot get to the player: {swarmAllocation.players[targetPlayerIndex].playerUsername}");
+                swarmAllocation.enemiesTargeting[targetPlayerIndex]--;
+                targetPlayerIndex = -1;
+                timer = 0f;
+                return;
+            }
 
             DLGModMain.logger.LogInfo($"Swarm Enemy is moving towards the player: {swarmAllocation.players[targetPlayerIndex].playerUsername}");
 
@@ -118,7 +122,7 @@ public class DLGEnemyAI : MonoBehaviour
         {
             PlayerControllerB player = swarmAllocation.players[i];
 
-            if (player.isPlayerControlled && player.isInsideFactory)
+            if (player.isPlayerControlled && player.isInsideFactory != enemyAI.enemyType.isOutsideEnemy)
             {
                 if (swarmAllocation.enemiesTargeting[i] <= swarmAllocation.maxEnemiesPerPlayer)
                 {
@@ -195,7 +199,27 @@ internal class DLGEnemyAIPatch
     [HarmonyPostfix]
     public static void OnEnemyDied(EnemyAI __instance)
     {
-        GameObject.FindObjectOfType<SwarmAllocation>()
-            .enemiesTargeting[__instance.gameObject.GetComponent<DLGEnemyAI>().targetPlayerIndex]--;
+        if (__instance.gameObject.GetComponent<DLGEnemyAI>() != null)
+        {
+            if (__instance.gameObject.GetComponent<DLGEnemyAI>().dLGEnemyType == DLGEnemyAI.DLGEnemyType.CuteUWULootbug)
+            {
+                DLGModMain.logger.LogError("WHAT HAVE YOU DONE? DID YOU JUST KILL THAT REALLY CUTE LOOTBUG?! YOU SOULLESS BEAST!");
+
+                List<Item> allItemsList = Resources.FindObjectsOfTypeAll<AllItemsList>()[0].itemsList;
+
+                int GoldIndex = allItemsList.FindIndex(item => item.itemName == "Gold bar");
+
+                GameObject GoldBar =
+                    GameObject.Instantiate(allItemsList[GoldIndex].spawnPrefab, position: __instance.transform.position, rotation: new Quaternion());
+                GoldBar.GetComponent<GrabbableObject>().fallTime = 0f;
+                GoldBar.GetComponent<GrabbableObject>().SetScrapValue(UnityEngine.Random.Range(100, 200));
+                GoldBar.GetComponent<NetworkObject>().Spawn();
+            }
+            else
+            {
+                GameObject.FindObjectOfType<SwarmAllocation>()
+                .enemiesTargeting[__instance.gameObject.GetComponent<DLGEnemyAI>().targetPlayerIndex]--;
+            }
+        }
     }
 }

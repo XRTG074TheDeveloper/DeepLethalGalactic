@@ -139,18 +139,29 @@ namespace DLGMod.Patches
                     switch (ch)
                     {
                         case 'A':
-                            SwarmPatch.dangerLevel += 4f;
+                            SwarmPatch.dangerLevel += 7f;
                             break;
                         case 'S':
-                            SwarmPatch.dangerLevel += 9f;
+                            SwarmPatch.dangerLevel += 15f;
                             break;
                         case '+':
-                            SwarmPatch.dangerLevel += 12f;
+                            SwarmPatch.dangerLevel += 5f;
                             break;
                     }
                 }
 
                 SwarmPatch.SetUpSwarmStuff(__instance.allPlayerScripts);
+
+                RoundManager roundManager = GameObject.FindObjectOfType<RoundManager>();
+
+                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                    .enemyType.enemyPrefab.AddComponent<DLGEnemyAI>();
+                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                   .enemyType.enemyPrefab.AddComponent<Light>().color = Color.yellow;
+                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                   .enemyType.enemyPrefab.GetComponent<Light>().intensity = 15;
+                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                   .enemyType.enemyPrefab.GetComponent<Light>().range = 15;
 
                 DLGModMain.logger.LogInfo("Starting game:\n" +
                 $"\tMoon danger level: {SwarmPatch.dangerLevel}\n" +
