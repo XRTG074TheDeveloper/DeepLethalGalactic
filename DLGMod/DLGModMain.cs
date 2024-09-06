@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DLGMod
 {
-    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.5.0")]
+    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.5.1")]
     public class DLGModMain : BaseUnityPlugin
     {
         internal const string GUID = "XRTG074TheDeveloper.DeepLethalGalactic";

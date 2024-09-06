@@ -99,7 +99,14 @@ namespace DLGMod.Patches
                 if (!hasStartedHost)
                 {
                     hasStartedHost = true;
-                    GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer("dlgnetsync_onmission");
+                    if (__instance.IsHost)
+                    {
+                        GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer("dlgnetsync_onmission");
+                    }
+                }
+                else
+                {
+                    return;
                 }
 
                 DLGModMain.SendAmmunition(__instance.connectedPlayersAmount + 1);
@@ -645,7 +652,7 @@ namespace DLGMod.Patches
 
                 for (int i = 0; i < itemsToDeliver.Count; i++)
                 {
-                    if (itemsToDeliver[i] == 14)
+                    if (itemsToDeliver[i] == AmmunitionPatch.ammunitionItemIndex)
                     {
                         DLGModMain.logger.LogInfo("Dropship opened. Spawning:");
 
@@ -670,10 +677,10 @@ namespace DLGMod.Patches
                             num = ((num < 3) ? (num + 1) : 0);
                         }
 
-                        itemsToDeliver.Remove(14);
+                        itemsToDeliver.Remove(AmmunitionPatch.ammunitionItemIndex);
                         i--;
                     }
-                    else if (itemsToDeliver[i] == 15)
+                    else if (itemsToDeliver[i] == AmmunitionPatch.ammunitionItemIndex + 1)
                     {
                         DLGModMain.logger.LogInfo("Dropship opened. Spawning:");
 
@@ -698,7 +705,7 @@ namespace DLGMod.Patches
                             num = ((num < 3) ? (num + 1) : 0);
                         }
 
-                        itemsToDeliver.Remove(15);
+                        itemsToDeliver.Remove(AmmunitionPatch.ammunitionItemIndex + 1);
                         i--;
                     }
                 }
