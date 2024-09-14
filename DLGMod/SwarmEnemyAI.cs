@@ -9,6 +9,7 @@ public class DLGEnemyAI : MonoBehaviour
 {
     public enum DLGEnemyType
     {
+        EnemyPrefab,
         SwarmEnemy,
         StrongSwarmEnemy,
         CuteUWULootbug
@@ -46,6 +47,11 @@ public class DLGEnemyAI : MonoBehaviour
             dLGEnemyType = DLGEnemyType.CuteUWULootbug;
         }
 
+        if (!gameObject.name.Contains("Clone"))
+        {
+            dLGEnemyType = DLGEnemyType.EnemyPrefab;
+        }
+
         swarmAllocation = GameObject.FindObjectOfType<SwarmAllocation>();
         enemyAI = GetComponent<EnemyAI>();
         allAINodes = enemyAI.allAINodes;
@@ -62,7 +68,7 @@ public class DLGEnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (enemyAI.currentBehaviourStateIndex == 1 || dLGEnemyType == DLGEnemyType.CuteUWULootbug) return;
+        if (dLGEnemyType == DLGEnemyType.EnemyPrefab || enemyAI.currentBehaviourStateIndex == 1 || dLGEnemyType == DLGEnemyType.CuteUWULootbug) return;
 
         timer += Time.deltaTime;
 

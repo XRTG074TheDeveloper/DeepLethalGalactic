@@ -217,6 +217,10 @@ namespace DLGMod.Patches
 
             SwarmPatch.hasStarted = false;
 
+            DLGTipsPatch.ammunitionRecieved = false;
+
+            ChatCommandsPatch.PerformSwarmAction("finishSwarm");
+
             DLGModMain.logger.LogInfo("Finishing game:\n" +
                 $"\tMission properties are unlocked\n" +
                 $"\tAmmunition Pack and Ressuply Drop are unbuyable now");
@@ -568,24 +572,22 @@ namespace DLGMod.Patches
     [HarmonyPatch(typeof(HUDManager))]
     internal class ChatCommandsPatch
     {
-        [HarmonyPatch("AddTextMessageClientRpc")]
-        [HarmonyPrefix]
-        public static void GetSwarmMessage(ref string chatMessage)
+        public static void PerformSwarmAction(string action)
         {
             TimeOfDay timeOfDay = GameObject.FindObjectOfType<TimeOfDay>();
 
-            switch (chatMessage)
+            switch (action)
             {
-                case "SWARM!":
+                case "startSwarm":
                     timeOfDay.TimeOfDayMusic.volume = 1f;
                     timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[0]);
                     return;
-                case "THEY ARE HERE!!!":
+                case "loopSwarmMusic":
                     timeOfDay.TimeOfDayMusic.clip = DLGModMain.swarmSFX[1];
                     timeOfDay.TimeOfDayMusic.Play();
                     timeOfDay.TimeOfDayMusic.loop = true;
                     return;
-                case "SWARM IS ALMOST OVER":
+                case "finishSwarm":
                     timeOfDay.TimeOfDayMusic.loop = false;
                     SwarmPatch.isSwarmSFXFading = true;
                     return;
@@ -621,6 +623,23 @@ namespace DLGMod.Patches
                         SwarmPatch.hazardLevel = newHazardLevel;
 
                         DLGModMain.logger.LogInfo($"Set client hazard level to {newHazardLevel} - {MissionControllerPatch.hazardTitles[newHazardLevel - 1]}");
+                        break;
+                    case "swarm":
+                        if (requestArguments[2] == "start")
+                        {
+                            ChatCommandsPatch.PerformSwarmAction("startSwarm");
+
+                            DLGModMain.logger.LogInfo($"Started swarm on Client!");
+                        }
+                        else if (requestArguments[2] == "finish")
+                        {
+                            ChatCommandsPatch.PerformSwarmAction("finishSwarm");
+
+                            DLGModMain.logger.LogInfo($"Finished swarm on Client!");
+                        }
+                        break;
+                    default:
+                        DLGModMain.logger.LogError($"Invalid DLG NetStuff sync request: {chatMessage}");
                         break;
                 }
 
@@ -739,10 +758,10 @@ namespace DLGMod.Patches
 
                 if (shotgunAmmo.Count <= 2)
                 {
-                    DLGModMain.logger.LogInfo("Show Out of ammo Hint");
+                    DLGModMain.logger.LogInfo("Try displaying Out of ammo Hint");
 
                     hudManager.DisplayTip("Out of ammo?",
-                        "Don't worry! You can buy supply drop from terminal store",
+                        "Don't worry! You can buy supply drop from the terminal store",
                         false,
                         true, "DLG_ResupplyTip");
                 }

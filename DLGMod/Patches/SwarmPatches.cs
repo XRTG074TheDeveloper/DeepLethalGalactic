@@ -1,6 +1,5 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,6 +41,7 @@ namespace DLGMod.Patches
                 if (roundManager.currentLevel.Enemies[i].enemyType.enemyName.Contains("DLG"))
                 {
                     roundManager.currentLevel.Enemies.RemoveAt(i);
+                    i--;
                 }
             }
             if (roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Crawler") != -1)
@@ -59,6 +59,8 @@ namespace DLGMod.Patches
             swarmAllocation.GetComponent<SwarmAllocation>().players = allPlayersScripts;
 
             swarmAllocation.GetComponent<SwarmAllocation>().enemiesTargeting = new int[allPlayersScripts.Length];
+
+            outsideAINodes = null;
 
             hasStarted = true;
 
@@ -179,7 +181,7 @@ namespace DLGMod.Patches
 
                 isSwarm = true;
 
-                hudManager.AddTextToChatOnServer("SWARM!");
+                hudManager.AddTextToChatOnServer("dlgnetsync_swarm_start");
 
                 chance = 0f;
             }
@@ -195,7 +197,7 @@ namespace DLGMod.Patches
             {
                 if (isSwarm)
                 {
-                    hudManager.AddTextToChatOnServer("SWARM IS ALMOST OVER");
+                    hudManager.AddTextToChatOnServer("dlgnetsync_swarm_finish");
                     isSwarm = false;
                 }
 
@@ -270,7 +272,7 @@ namespace DLGMod.Patches
         {
             if (isSwarm && !__instance.TimeOfDayMusic.isPlaying && !__instance.TimeOfDayMusic.loop)
             {
-                hudManager.AddTextToChatOnServer("THEY ARE HERE!!!");
+                ChatCommandsPatch.PerformSwarmAction("loopSwarmMusic");
             }
             if (!isSwarm && __instance.TimeOfDayMusic.isPlaying)
             {
