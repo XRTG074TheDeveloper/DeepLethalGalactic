@@ -2,6 +2,8 @@
 using GameNetcodeStuff;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -156,8 +158,41 @@ public class DLGEnemyAI : MonoBehaviour
 }
 
 [HarmonyPatch(typeof(CrawlerAI))]
-internal class SwarmCrawlerDamagePatch
+internal class SwarmCrawlerPatch
 {
+    [HarmonyPatch("MakeScreech")]
+    [HarmonyTranspiler]
+    public static IEnumerable<CodeInstruction> SetSwarmCralwerScreechVolume(IEnumerable<CodeInstruction> instructions)
+    {
+        List<CodeInstruction> codeInstructions = new List<CodeInstruction>(instructions);
+
+        bool transpiledScreechVolume = false;
+
+        for (int i = 0; i < codeInstructions.Count; i++)
+        {
+            if (i < codeInstructions.Count - 2 &&
+                codeInstructions[i].opcode == OpCodes.Ldloc_0 && codeInstructions[i + 1].opcode == OpCodes.Ldelem_Ref &&
+                !transpiledScreechVolume)
+            {
+                codeInstructions.Insert(i + 2,
+                                        new CodeInstruction(OpCodes.Ldc_R4, 0.2f));
+                codeInstructions[i + 3] = new CodeInstruction(OpCodes.Callvirt,
+                    AccessTools.Method(typeof(UnityEngine.AudioSource), "PlayOneShot", new System.Type[]
+                    {
+                        typeof(UnityEngine.AudioClip), typeof(float)
+                    }));
+
+                transpiledScreechVolume = true;
+            }
+            else if (codeInstructions[i].opcode == OpCodes.Ldc_R4 && codeInstructions[i].operand.ToString() == "0.75")
+            {
+                codeInstructions[i] = new CodeInstruction(OpCodes.Ldc_R4, 0.2f);
+            }
+        }
+
+        return codeInstructions.AsEnumerable();
+    }
+
     [HarmonyPatch("OnCollideWithPlayer")]
     [HarmonyPrefix]
     public static void SetSwarmCrawlerDamage(CrawlerAI __instance, ref Collider other)
