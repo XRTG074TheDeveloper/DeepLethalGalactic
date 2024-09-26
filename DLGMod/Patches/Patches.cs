@@ -84,7 +84,7 @@ namespace DLGMod.Patches
         {
             if (__instance.IsHost)
             {
-                DLGModMain.logger.LogInfo("New client connected. Sending DLG NetStuff sync request");
+                DLGModMain.logger.LogInfo("New client connected. Sending DLG NetStuff sync request...");
 
                 GameObject.FindObjectOfType<HUDManager>().AddTextToChatOnServer($"dlgnetsync_missionhazard_{SwarmPatch.hazardLevel}");
             }
@@ -580,10 +580,10 @@ namespace DLGMod.Patches
             {
                 case "startSwarm":
                     timeOfDay.TimeOfDayMusic.volume = 1f;
-                    timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[0]);
+                    timeOfDay.TimeOfDayMusic.PlayOneShot(DLGModMain.swarmSFX[1]);
                     return;
                 case "loopSwarmMusic":
-                    timeOfDay.TimeOfDayMusic.clip = DLGModMain.swarmSFX[1];
+                    timeOfDay.TimeOfDayMusic.clip = DLGModMain.swarmSFX[0];
                     timeOfDay.TimeOfDayMusic.Play();
                     timeOfDay.TimeOfDayMusic.loop = true;
                     return;
@@ -673,13 +673,16 @@ namespace DLGMod.Patches
                 {
                     if (itemsToDeliver[i] == AmmunitionPatch.ammunitionItemIndex)
                     {
+                        int shotgunIndex = allItemsList.FindIndex(item => item.name == "Shotgun");
+                        int shotgunAmmmoIndex = allItemsList.FindIndex(item => item.name == "GunAmmo");
+
                         DLGModMain.logger.LogInfo("Dropship opened. Spawning:");
 
                         for (int j = 0; j < 1; j++)
                         {
                             DLGModMain.logger.LogInfo("\tShotgun");
 
-                            GameObject obj = GameObject.Instantiate(allItemsList[59].spawnPrefab,
+                            GameObject obj = GameObject.Instantiate(allItemsList[shotgunIndex].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Shotgun
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
                             obj.GetComponent<NetworkObject>().Spawn();
@@ -689,7 +692,7 @@ namespace DLGMod.Patches
                         {
                             DLGModMain.logger.LogInfo("\tShotgun Ammo");
 
-                            GameObject obj = GameObject.Instantiate(allItemsList[60].spawnPrefab,
+                            GameObject obj = GameObject.Instantiate(allItemsList[shotgunAmmmoIndex].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Shotgun ammo
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
                             obj.GetComponent<NetworkObject>().Spawn();
@@ -701,13 +704,16 @@ namespace DLGMod.Patches
                     }
                     else if (itemsToDeliver[i] == AmmunitionPatch.ammunitionItemIndex + 1)
                     {
+                        int shotgunAmmmoIndex = allItemsList.FindIndex(item => item.name == "GunAmmo");
+                        int tzpMedkitIndex = allItemsList.FindIndex(item => item.name == "TZPInhalant");
+
                         DLGModMain.logger.LogInfo("Dropship opened. Spawning:");
 
                         for (int j = 0; j < DLGModMain.playersAmount * 7; j++)
                         {
                             DLGModMain.logger.LogInfo("\tShotgun Ammo");
 
-                            GameObject obj = GameObject.Instantiate(allItemsList[60].spawnPrefab,
+                            GameObject obj = GameObject.Instantiate(allItemsList[shotgunAmmmoIndex].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Shotgun ammo
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
                             obj.GetComponent<NetworkObject>().Spawn();
@@ -717,7 +723,7 @@ namespace DLGMod.Patches
                         {
                             DLGModMain.logger.LogInfo("\tTZP-MedKit");
 
-                            GameObject obj = GameObject.Instantiate(allItemsList[13].spawnPrefab,
+                            GameObject obj = GameObject.Instantiate(allItemsList[tzpMedkitIndex].spawnPrefab,
                                 __instance.itemSpawnPositions[num].position, Quaternion.identity); // Health
                             obj.GetComponent<GrabbableObject>().fallTime = 0f;
                             obj.GetComponent<NetworkObject>().Spawn();

@@ -209,10 +209,13 @@ namespace DLGMod.Patches
 
         private static void SpawnSwarmEnemies(RoundManager roundManager, int currentEnemiesAmount, int currentOutsideEnemiesAmount)
         {
-            //DLGModMain.logger.LogInfo($"{currentEnemiesAmount}\n{currentOutsideEnemiesAmount}\n{maxEnemiesAtTime}\n{enemiesToSpawn}\n{outsideEnemiesToSpawn}");
-
             for (int i = currentEnemiesAmount; i < maxEnemiesAtTime; i++)
             {
+                if (enemiesToSpawn == 0)
+                {
+                    break;
+                }
+
                 int enemyToSpawn = UnityEngine.Random.Range(0, swarmEnemiesIndex.Count / 4);
 
                 EnemyVent vent = roundManager.allEnemyVents[UnityEngine.Random.Range(1, roundManager.allEnemyVents.Length)];
@@ -231,15 +234,15 @@ namespace DLGMod.Patches
                 roundManager.SpawnEnemyOnServer(vent.transform.position, vent.transform.eulerAngles.y, enemyToSpawn);
 
                 enemiesToSpawn--;
-
-                if (enemiesToSpawn == 0)
-                {
-                    break;
-                }
             }
 
             for (int i = currentOutsideEnemiesAmount; i < maxEnemiesAtTime; i++)
             {
+                if (outsideEnemiesToSpawn == 0)
+                {
+                    break;
+                }
+
                 int enemyToSpawn = UnityEngine.Random.Range(0, swarmEnemiesIndex.Count / 4);
 
                 Transform spawnPosition = outsideAINodes[UnityEngine.Random.Range(1, outsideAINodes.Length)].transform;
@@ -258,11 +261,6 @@ namespace DLGMod.Patches
                 roundManager.SpawnEnemyOnServer(spawnPosition.position, 0, enemyToSpawn);
 
                 outsideEnemiesToSpawn--;
-
-                if (outsideEnemiesToSpawn == 0)
-                {
-                    break;
-                }
             }
         }
 

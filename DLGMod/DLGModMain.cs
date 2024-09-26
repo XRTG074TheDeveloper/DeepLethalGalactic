@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DLGMod
 {
-    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.5.3")]
+    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.5.4")]
     public class DLGModMain : BaseUnityPlugin
     {
         internal const string GUID = "XRTG074TheDeveloper.DeepLethalGalactic";
@@ -42,7 +42,7 @@ namespace DLGMod
             //    MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
             //}
 
-            AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\swarm");
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\swarmmusic");
 
             if (assetBundle != null)
             {
