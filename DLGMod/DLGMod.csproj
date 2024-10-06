@@ -76,8 +76,8 @@
     <Compile Include="Patches\SwarmPatches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Patches\Patches.cs" />
-    <Compile Include="SwarmAllocation.cs" />
-    <Compile Include="SwarmEnemyAI.cs" />
+    <Compile Include="CustomUnityClasses\SwarmAllocation.cs" />
+    <Compile Include="CustomUnityClasses\SwarmEnemyAI.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="CustomUnityClasses\" />

@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace DLGMod
 {
-    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.5.4")]
+    [BepInPlugin(GUID, "Deep Lethal Galactic", "0.5.5")]
     public class DLGModMain : BaseUnityPlugin
     {
         internal const string GUID = "XRTG074TheDeveloper.DeepLethalGalactic";
@@ -20,7 +20,6 @@ namespace DLGMod
         internal static string filesPath;
 
 
-        //internal static List<AudioClip> MissionControlQuotesSFX;
 
         internal static List<AudioClip> swarmSFX;
 
@@ -30,17 +29,8 @@ namespace DLGMod
         {
             logger = BepInEx.Logging.Logger.CreateLogSource(GUID);
 
-            //MissionControlQuotesSFX = new List<AudioClip>();
-
             filesPath = this.Info.Location;
             filesPath = filesPath.TrimEnd("DLGMod.dll".ToCharArray());
-
-            //AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\mission_control_quotes");
-
-            //if (assetBundle != null)
-            //{
-            //    MissionControlQuotesSFX = assetBundle.LoadAllAssets<AudioClip>().ToList();
-            //}
 
             AssetBundle assetBundle = AssetBundle.LoadFromFile(filesPath + "\\swarmmusic");
 
@@ -60,6 +50,7 @@ namespace DLGMod
             harmonyInstance.PatchAll(typeof(DLGNetStuffSync));
             harmonyInstance.PatchAll(typeof(DLGEnemyAIPatch));
             harmonyInstance.PatchAll(typeof(SwarmCrawlerPatch));
+            harmonyInstance.PatchAll(typeof(NetworkManagerPatch));
         }
 
         internal static void SendAmmunition(int _playersAmount)

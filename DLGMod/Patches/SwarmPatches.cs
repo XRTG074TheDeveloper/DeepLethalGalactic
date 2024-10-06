@@ -1,10 +1,85 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace DLGMod.Patches
 {
+    [HarmonyPatch(typeof(NetworkManager))]
+    internal class NetworkManagerPatch
+    {
+        [HarmonyPatch("Awake")]
+        [HarmonyPrefix]
+        public static void SetUpSwarmEnemiesNetworkPrefabs(NetworkManager __instance)
+        {
+            uint i = 1;
+
+            foreach (GameObject gameObject in CreateNewSwarmEnemyNetworkPrefab<CrawlerAI>("DLG[isOutside?][isStrong?]SwarmCrawler",
+                "Crawler"))
+            {
+                gameObject.SetActive(false);
+
+                uint? hashId = Traverse.Create(gameObject.GetComponent<NetworkObject>()).Field("GlobalObjectIdHash").GetValue() as uint?;
+
+                DLGModMain.logger.LogInfo(hashId);
+
+                hashId += i;
+
+                DLGModMain.logger.LogInfo(hashId);
+
+                Traverse.Create(gameObject.GetComponent<NetworkObject>()).Field("GlobalObjectIdHash").SetValue(hashId);
+
+                __instance.AddNetworkPrefab(gameObject);
+
+                i++;
+            }
+        }
+
+        private static GameObject[] CreateNewSwarmEnemyNetworkPrefab<T>(string swarmEnemyName, string originalEnemyName)
+            where T : EnemyAI
+        {
+            GameObject[] swarmEnemies = new GameObject[4];
+
+            for (int i = 0; i < 4; i++)
+            {
+                string currentSwarmEnemyName = swarmEnemyName;
+
+                switch (i)
+                {
+                    case 0:
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isStrong?]", "");
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isOutside?]", "");
+                        break;
+                    case 1:
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isStrong?]", "");
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isOutside?]", "Outside");
+                        break;
+                    case 2:
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isStrong?]", "Strong");
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isOutside?]", "");
+                        break;
+                    case 3:
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isStrong?]", "Strong");
+                        currentSwarmEnemyName = currentSwarmEnemyName.Replace("[isOutside?]", "Outside");
+                        break;
+                }
+
+                swarmEnemies[i] = GameObject.Instantiate(Resources.FindObjectsOfTypeAll<T>()
+                    .ToList().Find(enemy => enemy.name == originalEnemyName).gameObject);
+
+                swarmEnemies[i].name = currentSwarmEnemyName;
+
+                swarmEnemies[i].AddComponent<DLGEnemyAI>();
+
+                Object.DontDestroyOnLoad(swarmEnemies[i]);
+            }
+
+            return swarmEnemies;
+        }
+    }
+
     [HarmonyPatch(typeof(TimeOfDay))]
     internal class SwarmPatch
     {
@@ -46,7 +121,7 @@ namespace DLGMod.Patches
             }
             if (roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Crawler") != -1)
             {
-                CreateNewSwarmEnemy("DLG[isOutside?][isStrong?]SwarmCrawler", "Crawler", roundManager, new CrawlerAI());
+                CreateNewSwarmEnemy<CrawlerAI>("DLG[isOutside?][isStrong?]SwarmCrawler", "Crawler", roundManager);
             }
 
             maxEnemiesAtTime = hazardLevel * Mathf.CeilToInt(dangerLevel / 10) * (0.75f + DLGModMain.playersAmount / allPlayersScripts.Length);
@@ -63,10 +138,9 @@ namespace DLGMod.Patches
             outsideAINodes = null;
 
             hasStarted = true;
-
         }
 
-        private static void CreateNewSwarmEnemy<T>(string swarmEnemyName, string originalEnemyName, RoundManager roundManager, T enemyAIType) 
+        private static void CreateNewSwarmEnemy<T>(string swarmEnemyName, string originalEnemyName, RoundManager roundManager)
             where T : EnemyAI
         {
             for (int i = 0; i < 4; i++)
@@ -97,7 +171,10 @@ namespace DLGMod.Patches
                 swarmEnemy.enemyType = roundManager.currentLevel.Enemies.Find(enemy => enemy.enemyType.enemyName == originalEnemyName).enemyType;
                 swarmEnemy.rarity = 0;
 
-                GameObject enemyPrefab = GameObject.Instantiate(swarmEnemy.enemyType.enemyPrefab);
+                GameObject enemyPrefab = GameObject.FindObjectsOfType<DLGEnemyAI>(true).ToList()
+                    .Find(enemy => enemy.gameObject.name == currentSwarmEnemyName).gameObject;
+
+                enemyPrefab.SetActive(true);
 
                 swarmEnemy.enemyType = ScriptableObject.CreateInstance<EnemyType>();
 
@@ -109,8 +186,6 @@ namespace DLGMod.Patches
                 {
                     swarmEnemy.enemyType.isOutsideEnemy = true;
                 }
-
-                DLGModMain.logger.LogInfo(currentSwarmEnemyName);
 
                 enemyPrefab.GetComponent<T>().enemyType = swarmEnemy.enemyType;
                 enemyPrefab.AddComponent<DLGEnemyAI>();

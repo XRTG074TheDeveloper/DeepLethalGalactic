@@ -70,7 +70,9 @@ public class DLGEnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (dLGEnemyType == DLGEnemyType.EnemyPrefab || enemyAI.currentBehaviourStateIndex == 1 || dLGEnemyType == DLGEnemyType.CuteUWULootbug) return;
+        if (enemyAI.IsHost ||
+            dLGEnemyType == DLGEnemyType.EnemyPrefab || enemyAI.currentBehaviourStateIndex == 1 || 
+            dLGEnemyType == DLGEnemyType.CuteUWULootbug) return;
 
         timer += Time.deltaTime;
 
@@ -103,7 +105,7 @@ public class DLGEnemyAI : MonoBehaviour
         else if ((enemyAI.currentSearch.unsearchedNodes.Count == 0 && prevTargetPlayerIndex != -1) ||
             (prevTargetPlayerIndex != -1 && !swarmAllocation.players[prevTargetPlayerIndex].isInsideFactory))
         {
-            DLGModMain.logger.LogInfo("Swarm Enemy doesnt see any player inside anymore. Switching to default roaming...");
+            DLGModMain.logger.LogInfo("Swarm Enemy doesnt see any player anymore. Switching to default roaming...");
 
             swarmAllocation.enemiesTargeting[prevTargetPlayerIndex]--;
 
