@@ -139,7 +139,7 @@ namespace DLGMod.Patches
                 "You are not able change your mission settings on the mission!\n\n";
                 MissionControllerPatch.isOnTheMission = true;
 
-                SwarmPatch.dangerLevel = 1f;
+                SwarmPatch.dangerLevel = 5f;
 
                 foreach (char ch in __instance.currentLevel.riskLevel)
                 {
@@ -159,16 +159,16 @@ namespace DLGMod.Patches
 
                 SwarmPatch.SetUpSwarmStuff(__instance.allPlayerScripts);
 
-                RoundManager roundManager = GameObject.FindObjectOfType<RoundManager>();
+                // RoundManager roundManager = GameObject.FindObjectOfType<RoundManager>();
 
-                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
-                    .enemyType.enemyPrefab.AddComponent<DLGEnemyAI>();
-                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
-                   .enemyType.enemyPrefab.AddComponent<Light>().color = Color.yellow;
-                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
-                   .enemyType.enemyPrefab.GetComponent<Light>().intensity = 15;
-                roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
-                   .enemyType.enemyPrefab.GetComponent<Light>().range = 15;
+                // roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                //    .enemyType.enemyPrefab.AddComponent<DLGEnemyAI>();
+                // roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                //   .enemyType.enemyPrefab.AddComponent<Light>().color = Color.yellow;
+                // roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                //   .enemyType.enemyPrefab.GetComponent<Light>().intensity = 15;
+                // roundManager.currentLevel.Enemies[roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Hoarding bug")]
+                //   .enemyType.enemyPrefab.GetComponent<Light>().range = 15;
 
                 DLGModMain.logger.LogInfo("Starting game:\n" +
                 $"\tMoon danger level: {SwarmPatch.dangerLevel}\n" +
@@ -678,7 +678,7 @@ namespace DLGMod.Patches
 
                         DLGModMain.logger.LogInfo("Dropship opened. Spawning:");
 
-                        for (int j = 0; j < 1; j++)
+                        for (int j = 0; j < 1 * DLGModMain.playersAmount; j++)
                         {
                             DLGModMain.logger.LogInfo("\tShotgun");
 
@@ -688,7 +688,7 @@ namespace DLGMod.Patches
                             obj.GetComponent<NetworkObject>().Spawn();
                             num = ((num < 3) ? (num + 1) : 0);
                         }
-                        for (int j = 0; j < 12; j++)
+                        for (int j = 0; j < 12 * DLGModMain.playersAmount; j++)
                         {
                             DLGModMain.logger.LogInfo("\tShotgun Ammo");
 

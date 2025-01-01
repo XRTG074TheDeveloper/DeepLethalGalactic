@@ -79,8 +79,6 @@
     <Compile Include="CustomUnityClasses\SwarmAllocation.cs" />
     <Compile Include="CustomUnityClasses\SwarmEnemyAI.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="CustomUnityClasses\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

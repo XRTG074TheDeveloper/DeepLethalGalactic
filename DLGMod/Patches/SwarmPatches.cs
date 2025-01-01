@@ -23,11 +23,7 @@ namespace DLGMod.Patches
 
                 uint? hashId = Traverse.Create(gameObject.GetComponent<NetworkObject>()).Field("GlobalObjectIdHash").GetValue() as uint?;
 
-                DLGModMain.logger.LogInfo(hashId);
-
                 hashId += i;
-
-                DLGModMain.logger.LogInfo(hashId);
 
                 Traverse.Create(gameObject.GetComponent<NetworkObject>()).Field("GlobalObjectIdHash").SetValue(hashId);
 
@@ -88,7 +84,7 @@ namespace DLGMod.Patches
 
         internal static float dangerLevel = 10;
         internal static int hazardLevel = 2;
-        internal static float maxEnemiesAtTime;
+        internal static int maxEnemiesAtTime;
 
         internal static GameObject[] outsideAINodes;
 
@@ -96,7 +92,8 @@ namespace DLGMod.Patches
 
         internal static float chance = 0;
         internal static int enemiesToSpawn = 0;
-        internal static int outsideEnemiesToSpawn = 0;
+
+        internal static float chanceMultiplier = 1f;
 
         internal static bool isSwarm = false;
         internal static bool isSwarmSFXFading = false;
@@ -119,17 +116,23 @@ namespace DLGMod.Patches
                     i--;
                 }
             }
+
             if (roundManager.currentLevel.Enemies.FindIndex(enemy => enemy.enemyType.enemyName == "Crawler") != -1)
             {
                 CreateNewSwarmEnemy<CrawlerAI>("DLG[isOutside?][isStrong?]SwarmCrawler", "Crawler", roundManager);
             }
 
-            maxEnemiesAtTime = hazardLevel * Mathf.CeilToInt(dangerLevel / 10) * (0.75f + DLGModMain.playersAmount / allPlayersScripts.Length);
+            if (!roundManager.IsHost) return;
+
+            chanceMultiplier = UnityEngine.Random.Range(0.01f, 1f);
+
+            maxEnemiesAtTime = Mathf.CeilToInt(hazardLevel * Mathf.CeilToInt(dangerLevel / 10) * (1f + (DLGModMain.playersAmount / 4)));
 
             swarmAllocation = new GameObject();
+            swarmAllocation.name = "SwarmAllocation";
             swarmAllocation.AddComponent<SwarmAllocation>();
 
-            swarmAllocation.GetComponent<SwarmAllocation>().maxEnemiesPerPlayer = Mathf.CeilToInt(maxEnemiesAtTime / DLGModMain.playersAmount);
+            swarmAllocation.GetComponent<SwarmAllocation>().maxEnemiesAtTime = maxEnemiesAtTime;
 
             swarmAllocation.GetComponent<SwarmAllocation>().players = allPlayersScripts;
 
@@ -188,7 +191,6 @@ namespace DLGMod.Patches
                 }
 
                 enemyPrefab.GetComponent<T>().enemyType = swarmEnemy.enemyType;
-                enemyPrefab.AddComponent<DLGEnemyAI>();
 
                 roundManager.currentLevel.Enemies.Add(swarmEnemy);
             }
@@ -227,46 +229,45 @@ namespace DLGMod.Patches
             int rollDice = UnityEngine.Random.Range(30, 100);
 
             DLGModMain.logger.LogInfo($"Current swarm chance: {chance}\n" +
-                $"Randomly chosen swarm value: {rollDice}");
+                $"Randomly chosen swarm value: {rollDice}\n" +
+                $"Chance multiplier: {chanceMultiplier}");
 
             int enemiesAmount = 0;
             int outsideEnemiesAmount = 0;
 
-            foreach (DLGEnemyAI enemy in GameObject.FindObjectsOfType<DLGEnemyAI>())
+            foreach (EnemyAI enemy in GameObject.FindObjectsOfType<EnemyAI>())
             {
-                if (!enemy.enemyAI.isEnemyDead && enemy.name.ToString().Contains("Swarm") &&
+                if (!enemy.isEnemyDead && enemy.name.ToString().Contains("Swarm") &&
                     !enemy.name.ToString().Contains("Outside")) enemiesAmount++;
             }
-            foreach (DLGEnemyAI enemy in GameObject.FindObjectsOfType<DLGEnemyAI>())
+            foreach (EnemyAI enemy in GameObject.FindObjectsOfType<EnemyAI>())
             {
-                if (!enemy.enemyAI.isEnemyDead && enemy.name.ToString().Contains("Swarm") &&
+                if (!enemy.isEnemyDead && enemy.name.ToString().Contains("Swarm") &&
                     enemy.name.ToString().Contains("Outside")) outsideEnemiesAmount++;
             }
 
             if (rollDice < chance && enemiesToSpawn == 0)
             {
-                StartOfRound startOfRound = GameObject.FindObjectOfType<StartOfRound>();
-
-                enemiesToSpawn = Mathf.CeilToInt((0.75f + DLGModMain.playersAmount / startOfRound.allPlayerScripts.Length)
-                    * hazardLevel * Mathf.CeilToInt(dangerLevel / 10));
-                outsideEnemiesToSpawn = Mathf.CeilToInt((0.75f + DLGModMain.playersAmount / startOfRound.allPlayerScripts.Length)
-                    * hazardLevel * Mathf.CeilToInt(dangerLevel / 10));
+                enemiesToSpawn = Mathf.CeilToInt(Mathf.CeilToInt((0.75f + DLGModMain.playersAmount / 4)
+                    * hazardLevel * Mathf.CeilToInt(dangerLevel / 4)) * UnityEngine.Random.Range(0.5f, 3f));
 
                 SpawnSwarmEnemies(roundManager, enemiesAmount, outsideEnemiesAmount);
 
                 isSwarm = true;
 
                 hudManager.AddTextToChatOnServer("dlgnetsync_swarm_start");
+                chanceMultiplier = 0.01f;
 
                 chance = 0f;
             }
-            else if (enemiesToSpawn != 0)
+            else if (enemiesToSpawn > 0)
             {
                 if (isSwarm && (enemiesAmount < maxEnemiesAtTime || outsideEnemiesAmount < maxEnemiesAtTime))
                 {
                     SpawnSwarmEnemies(roundManager, enemiesAmount, outsideEnemiesAmount);
                 }
-                chance += 0.01f * dangerLevel * __instance.normalizedTimeOfDay * hazardLevel;
+
+                chance += dangerLevel * __instance.normalizedTimeOfDay * hazardLevel * chanceMultiplier;
             }
             else
             {
@@ -276,7 +277,9 @@ namespace DLGMod.Patches
                     isSwarm = false;
                 }
 
-                chance += dangerLevel * __instance.normalizedTimeOfDay * UnityEngine.Random.Range(0.5f, 1f) * hazardLevel;
+                chance += dangerLevel * __instance.normalizedTimeOfDay * UnityEngine.Random.Range(0.5f, 1f) * hazardLevel * 2 * chanceMultiplier;
+
+                if (chanceMultiplier < 1f) chanceMultiplier += UnityEngine.Random.Range(0.001f, 0.01f);
             }
 
             hasBeenCalled = true;
@@ -284,7 +287,23 @@ namespace DLGMod.Patches
 
         private static void SpawnSwarmEnemies(RoundManager roundManager, int currentEnemiesAmount, int currentOutsideEnemiesAmount)
         {
-            for (int i = currentEnemiesAmount; i < maxEnemiesAtTime; i++)
+
+            float spawnCoeff = 0f; // Determines whether the enemy should be of inside or outside type
+
+            foreach (PlayerControllerB player in roundManager.playersManager.allPlayerScripts)
+            {
+                if (player.isPlayerControlled)
+                {
+                    if (player.isInsideFactory) spawnCoeff += 1.0f / DLGModMain.playersAmount;
+                }
+            }
+
+            DLGModMain.logger.LogInfo($"Current Inside enemies amount: {currentEnemiesAmount}\n\t" +
+                $"Current Outside enemies amount: {currentOutsideEnemiesAmount}\n\t" +
+                $"Enemies to spawn left: {enemiesToSpawn}\n\t" +
+                $"Spawn coefficient: {spawnCoeff}");
+
+            for (float i = currentEnemiesAmount; i < maxEnemiesAtTime * spawnCoeff; i++)
             {
                 if (enemiesToSpawn == 0)
                 {
@@ -311,9 +330,9 @@ namespace DLGMod.Patches
                 enemiesToSpawn--;
             }
 
-            for (int i = currentOutsideEnemiesAmount; i < maxEnemiesAtTime; i++)
+            for (float i = currentOutsideEnemiesAmount; i < maxEnemiesAtTime * (1 - spawnCoeff); i++)
             {
-                if (outsideEnemiesToSpawn == 0)
+                if (enemiesToSpawn == 0)
                 {
                     break;
                 }
@@ -335,7 +354,7 @@ namespace DLGMod.Patches
 
                 roundManager.SpawnEnemyOnServer(spawnPosition.position, 0, enemyToSpawn);
 
-                outsideEnemiesToSpawn--;
+                enemiesToSpawn--;
             }
         }
 

@@ -25,13 +25,20 @@ public class DLGEnemyAI : MonoBehaviour
     float timer = 0;
 
     public int targetPlayerIndex = -1;
-    int prevTargetPlayerIndex = -1;
 
     GameObject[] allAINodes;
 
-    Vector3 targetPlayerPosition = Vector3.zero;
-
     void Start()
+    {
+        SetUpEnemy();
+    }
+
+    void OnEnable()
+    {
+        SetUpEnemy();
+    }
+
+    void SetUpEnemy()
     {
         if (gameObject.name.Contains("Swarm"))
         {
@@ -70,63 +77,51 @@ public class DLGEnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (enemyAI.IsHost ||
-            dLGEnemyType == DLGEnemyType.EnemyPrefab || enemyAI.currentBehaviourStateIndex == 1 || 
+        if (dLGEnemyType == DLGEnemyType.EnemyPrefab &&
+            ((enemyAI.IsHost && swarmAllocation == null) || (!enemyAI.IsHost && GameObject.FindObjectOfType<Terminal>() == null))) gameObject.SetActive(false);
+        else if (dLGEnemyType != DLGEnemyType.EnemyPrefab &&
+            ((enemyAI.IsHost && swarmAllocation == null) || (!enemyAI.IsHost && GameObject.FindObjectOfType<Terminal>() == null))) Destroy(gameObject);
+
+        if (enemyAI.isEnemyDead ||
+            dLGEnemyType == DLGEnemyType.EnemyPrefab || enemyAI.currentBehaviourStateIndex == 1 ||
             dLGEnemyType == DLGEnemyType.CuteUWULootbug) return;
+
+        if (!enemyAI.IsHost) gameObject.GetComponent<DLGEnemyAI>().enabled = false;
 
         timer += Time.deltaTime;
 
-        if (timer < 10) return;
+        if (timer < 7) return;
 
-        if (targetPlayerIndex == -1 || enemyAI.currentSearch.unsearchedNodes.Count == 0)
+        if (targetPlayerIndex == -1 || !IsValidTarget(targetPlayerIndex))
         {
-            targetPlayerIndex = CalculateTargetPlayer(targetPlayerIndex);
+            targetPlayerIndex = CalculateTargetPlayer();
         }
 
         if (targetPlayerIndex != -1)
         {
-            if (!enemyAI.GetPathDistance(swarmAllocation.players[targetPlayerIndex].transform.position, gameObject.transform.position))
-            {
-                DLGModMain.logger.LogInfo($"Swarm Enemy cannot get to the player: {swarmAllocation.players[targetPlayerIndex].playerUsername}");
-                swarmAllocation.enemiesTargeting[targetPlayerIndex]--;
-                targetPlayerIndex = -1;
-                timer = 0f;
-                return;
-            }
+            DLGModMain.logger.LogInfo($"{gameObject.name} is moving towards the player: {swarmAllocation.players[targetPlayerIndex].playerUsername}");
 
-            DLGModMain.logger.LogInfo($"Swarm Enemy is moving towards the player: {swarmAllocation.players[targetPlayerIndex].playerUsername}");
-
-            List<GameObject> AINodes = new List<GameObject>();
-            AINodes.Add(swarmAllocation.players[targetPlayerIndex].gameObject);
+            List<GameObject> AINodes = new List<GameObject> { swarmAllocation.players[targetPlayerIndex].gameObject };
 
             enemyAI.allAINodes = AINodes.ToArray();
             enemyAI.currentSearch.inProgress = false;
         }
-        else if ((enemyAI.currentSearch.unsearchedNodes.Count == 0 && prevTargetPlayerIndex != -1) ||
-            (prevTargetPlayerIndex != -1 && !swarmAllocation.players[prevTargetPlayerIndex].isInsideFactory))
+        else
         {
-            DLGModMain.logger.LogInfo("Swarm Enemy doesnt see any player anymore. Switching to default roaming...");
-
-            swarmAllocation.enemiesTargeting[prevTargetPlayerIndex]--;
+            DLGModMain.logger.LogInfo("...but there is no player that could be targeted");
 
             enemyAI.allAINodes = allAINodes;
             enemyAI.currentSearch.inProgress = false;
         }
-        else
-        {
-            DLGModMain.logger.LogInfo("...but nobody came");
-        }
-
-        prevTargetPlayerIndex = targetPlayerIndex;
 
         timer = 0;
     }
 
-    private int CalculateTargetPlayer(int currentTargetPlayer)
+    private int CalculateTargetPlayer()
     {
         int result = -1;
 
-        DLGModMain.logger.LogInfo("Swarm Enemy is calculating new target player...");
+        DLGModMain.logger.LogInfo($"{gameObject.name} is calculating new target player...");
 
         for (int i = 0; i < swarmAllocation.players.Length; i++)
         {
@@ -134,28 +129,40 @@ public class DLGEnemyAI : MonoBehaviour
 
             if (player.isPlayerControlled && player.isInsideFactory != enemyAI.enemyType.isOutsideEnemy)
             {
-                if (swarmAllocation.enemiesTargeting[i] <= swarmAllocation.maxEnemiesPerPlayer)
+                int maxEnemiesPerPlayer = enemyAI.enemyType.isOutsideEnemy ? swarmAllocation.currentMaxEnemiesPerPlayer.Item2 : swarmAllocation.currentMaxEnemiesPerPlayer.Item1;
+
+                if (swarmAllocation.enemiesTargeting[i] < maxEnemiesPerPlayer)
                 {
-                    if (enemyAI.GetPathDistance(swarmAllocation.players[i].transform.position, gameObject.transform.position))
-                    {
-                        result = i;
-
-                        if (i != currentTargetPlayer)
-                        {
-                            swarmAllocation.enemiesTargeting[i]++;
-                        }
-
-                        break;
-                    }
+                    result = i;
+                }
+                else {
+                    DLGModMain.logger.LogError($"Player: {player.playerUsername} is not valid for targeting cuz it is overtargeted: {swarmAllocation.enemiesTargeting[i]}");
                 }
             }
-            else
-            {
-                swarmAllocation.enemiesTargeting[i] = 0;
+            else {
+                DLGModMain.logger.LogError($"Player: {player.playerUsername} is not valid for targeting cuz it is not in the correct area or dead");
             }
         }
 
+        if (result != -1)
+        {
+            swarmAllocation.enemiesTargeting[result]++;
+        }
+
         return result;
+    }
+
+    private bool IsValidTarget(int playerIndex)
+    {
+        PlayerControllerB player = swarmAllocation.players[playerIndex];
+        bool isValid = !player.isPlayerDead && player.isInsideFactory != enemyAI.enemyType.isOutsideEnemy;
+
+        if (!isValid) 
+        {
+            swarmAllocation.enemiesTargeting[playerIndex]--;
+        }
+
+        return isValid;
     }
 }
 
@@ -258,10 +265,11 @@ internal class DLGEnemyAIPatch
                 GoldBar.GetComponent<GrabbableObject>().SetScrapValue(UnityEngine.Random.Range(100, 200));
                 GoldBar.GetComponent<NetworkObject>().Spawn();
             }
-            else
+            else if (__instance.gameObject.GetComponent<DLGEnemyAI>().targetPlayerIndex != -1)
             {
                 GameObject.FindObjectOfType<SwarmAllocation>()
                 .enemiesTargeting[__instance.gameObject.GetComponent<DLGEnemyAI>().targetPlayerIndex]--;
+                __instance.gameObject.GetComponent<DLGEnemyAI>().targetPlayerIndex = -1;
             }
         }
     }
